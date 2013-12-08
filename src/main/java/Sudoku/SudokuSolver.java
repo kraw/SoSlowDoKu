@@ -4,7 +4,6 @@ package Sudoku;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 
 public class SudokuSolver extends SudokuBoard {
 
@@ -36,7 +35,7 @@ public class SudokuSolver extends SudokuBoard {
             return true;
         this.applyLogic();
         this.bruteForce();
-        return this.boardIsValid() && this.isSolution();
+        return this.isValid() && this.isSolution();
     }
 
     public void applyLogic() {
@@ -69,10 +68,10 @@ public class SudokuSolver extends SudokuBoard {
      */
     protected boolean cleanupPossibilities() {
         boolean stateChanged = false;
-        for (int i = 0; i < this.possibilities.length; ++i) {
-            for (int j = 0; j < this.possibilities[0].length; ++j) {
-                if (this.possibilities[i][j] != null && this.possibilities[i][j].size() == 1) {
-                    this.setSpace(i, j, this.possibilities[i][j].toArray(new Integer[0])[0]);
+        for (int i = 0; i < this.options.length; ++i) {
+            for (int j = 0; j < this.options[0].length; ++j) {
+                if (this.options[i][j] != null && this.options[i][j].size() == 1) {
+                    this.setEntry(i, j, this.options[i][j].iterator().next());
                     stateChanged = true;
                 }
             }
@@ -86,7 +85,7 @@ public class SudokuSolver extends SudokuBoard {
         int jmin = -1;
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
-                int size = this.possibilities[i][j].size();
+                int size = this.options[i][j].size();
                 if (size > 0 && size < min) {
                     min = size;
                     imin = i;
@@ -113,10 +112,10 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     private boolean bruteForce(int i, int j, SudokuBoard backup) {
-        Integer[] guesses = this.possibilities[i][j].toArray(new Integer[0]);
+        Integer[] guesses = this.options[i][j].toArray(new Integer[0]);
 //        this.printData();
         for (int n: guesses) {
-            this.setSpace(i, j, n);
+            this.setEntry(i, j, n);
             this.applyLogic();
 //            System.out.println(this);
 
@@ -148,7 +147,7 @@ public class SudokuSolver extends SudokuBoard {
     public boolean tryToFinishSubmatrices() {
         boolean stateChanged = false;
         for (int i = 0; i < 9; ++i)
-            if (this.submatrixPossibilities[i].size() > 0 && this.tryToFillInSubmatrix(i))
+            if (this.submatrixOptions[i].size() > 0 && this.tryToFillInSubmatrix(i))
                 stateChanged = true;
         return stateChanged;
     }
@@ -156,7 +155,7 @@ public class SudokuSolver extends SudokuBoard {
     public boolean tryToFinishRows() {
         boolean stateChanged = false;
         for (int i = 0; i < 9; ++i)
-            if (this.rowPossibilities[i].size() > 0 && this.tryToFillInRow(i))
+            if (this.rowOptions[i].size() > 0 && this.tryToFillInRow(i))
                 stateChanged = true;
         return stateChanged;
     }
@@ -164,7 +163,7 @@ public class SudokuSolver extends SudokuBoard {
     public boolean tryToFinishCols() {
         boolean stateChanged = false;
         for (int i = 0; i < 9; ++i)
-            if (this.colPossibilities[i].size() > 0 && this.tryToFillInCol(i))
+            if (this.colOptions[i].size() > 0 && this.tryToFillInCol(i))
                 stateChanged = true;
         return stateChanged;
     }
@@ -176,13 +175,13 @@ public class SudokuSolver extends SudokuBoard {
         int jEnd = jStart + 3;
         boolean stateChanged = false;
 
-        for (int n: this.submatrixPossibilities[submatrix]) {
+        for (int n: this.submatrixOptions[submatrix]) {
             int ki = -1;
             int kj = -1;
 
             innerLoop: for (int i = iStart; i < iEnd; ++i) {
                 for (int j = jStart; j < jEnd; ++j) {
-                    if (this.spaces[i][j] < 0 && this.possibilities[i][j].contains((Integer) n)) {
+                    if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
                         if (ki >= 0) {
                             ki = kj = -1;
                             break innerLoop;
@@ -195,7 +194,7 @@ public class SudokuSolver extends SudokuBoard {
             }
 
             if (ki >= 0) {
-                this.setSpace(ki, kj, n);
+                this.setEntry(ki, kj, n);
                 return true;
             }
         }
@@ -205,12 +204,12 @@ public class SudokuSolver extends SudokuBoard {
 
     protected boolean tryToFillInRow(int i) {
         boolean stateChanged = false;
-        for (int n: this.rowPossibilities[i].toArray(new Integer[0])) {
+        for (int n: this.rowOptions[i].toArray(new Integer[0])) {
             // If only one space in the row has n as a possibility, then n must go in that space.
             // k represents the column where n must go.
             int k = -1;
             innerLoop : for (int j = 0; j < 9; ++j) {
-                if (this.spaces[i][j] < 0 && this.possibilities[i][j].contains((Integer) n)) {
+                if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
                     if (k >= 0) {   // n could go in two spaces, so we can't do anything
                         k = -1;
                         break innerLoop;
@@ -221,7 +220,7 @@ public class SudokuSolver extends SudokuBoard {
             }
 
             if (k >= 0) {
-                this.setSpace(i, k, n);
+                this.setEntry(i, k, n);
                 return true;
             }
         }
@@ -230,10 +229,10 @@ public class SudokuSolver extends SudokuBoard {
 
     protected boolean tryToFillInCol(int j) {
         boolean stateChanged = false;
-        for (int n: this.colPossibilities[j]) {
+        for (int n: this.colOptions[j]) {
             int k = -1;
             innerLoop : for (int i = 0; i < 9; ++i) {
-                if (this.spaces[i][j] < 0 && this.possibilities[i][j].contains((Integer) n)) {
+                if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
                     if (k >= 0) {   // n could go in two spaces, so we can't do anything
                         k = -1;
                         break innerLoop;
@@ -244,7 +243,7 @@ public class SudokuSolver extends SudokuBoard {
             }
 
             if (k >= 0) {
-                this.setSpace(k, j, n);
+                this.setEntry(k, j, n);
                 return true;
             }
         }
