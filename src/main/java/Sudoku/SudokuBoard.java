@@ -21,7 +21,7 @@ public class SudokuBoard {
         }
     }
 
-    /* Stores the 9x9 grid of numbers */
+    /* Stores the 9x9 grid of numbers. -1 represents an empty entry.  */
     protected int[][] entries;
 
     /* Stores the number of entries filled */
@@ -70,11 +70,11 @@ public class SudokuBoard {
 
     public SudokuBoard() {
         this.init();
-
-        for (int i = 0; i < this.entries.length; ++i)
-            for (int j = 0; j < this.entries[0].length; ++j)
+        for (int i = 0; i < this.entries.length; ++i) {
+            for (int j = 0; j < this.entries[0].length; ++j) {
                 this.entries[i][j] = -1;
-
+            }
+        }
         assert(this.isValid());
         this.updateOptions();
         this.updateComponentOptions();
@@ -289,7 +289,7 @@ public class SudokuBoard {
         for (int i = 0; i < this.entries.length; ++i) {
             for (int j = 0; j < this.entries[i].length; ++j) {
                 if (this.entries[i][j] < 0)
-                    sb.append('x');
+                    sb.append('.');
                 else
                     sb.append(this.entries[i][j]);
             }

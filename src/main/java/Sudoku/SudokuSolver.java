@@ -30,6 +30,10 @@ public class SudokuSolver extends SudokuBoard {
         super(s);
     }
 
+    public SudokuSolver(SudokuBoard board) {
+        super(board);
+    }
+
     public boolean solve() {
         if (this.isSolution())
             return true;
@@ -43,7 +47,7 @@ public class SudokuSolver extends SudokuBoard {
         do {
             stateChanged = false;
 //            System.out.println("\n" + this);
-            while (this.cleanupPossibilities()) {
+            while (this.reduceOptions()) {
 //                System.out.println("\nCLEANUP\n" + this);
 //                this.printData();
                 stateChanged = true;
@@ -63,15 +67,16 @@ public class SudokuSolver extends SudokuBoard {
         } while (stateChanged);
     }
 
-    /** If any space has only one possible number, place that number in the space
-     * @return true if any space was changed
+    /* If any space has only one possible number remaining, place the number in its space.
+     * Return true if the board changed.
      */
-    protected boolean cleanupPossibilities() {
+    protected boolean reduceOptions() {
         boolean stateChanged = false;
         for (int i = 0; i < this.options.length; ++i) {
             for (int j = 0; j < this.options[0].length; ++j) {
                 if (this.options[i][j] != null && this.options[i][j].size() == 1) {
-                    this.setEntry(i, j, this.options[i][j].iterator().next());
+                    int n = this.options[i][j].iterator().next(); // grab the only thing in the set
+                    this.setEntry(i, j, n);
                     stateChanged = true;
                 }
             }
@@ -79,7 +84,10 @@ public class SudokuSolver extends SudokuBoard {
         return stateChanged;
     }
 
-    private int[] findSpaceWithFewestPossibilities() {
+    /* This method finds the next space where the solver will guess numbers.
+     * Currently, this finds the entry with the fewest number of options left.
+     */
+    protected int[] findMostAttractiveEntry() {
         int min = 10;
         int imin = -1;
         int jmin = -1;
@@ -97,13 +105,10 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     public void bruteForce() {
-//        System.out.println("Brute Forcing");
-//        System.out.println(this);
-//        this.printData();
         if (this.isFilled())
             return;
 
-        int[] space = this.findSpaceWithFewestPossibilities();
+        int[] space = this.findMostAttractiveEntry();
         int i = space[0];
         int j = space[1];
 
@@ -111,31 +116,20 @@ public class SudokuSolver extends SudokuBoard {
         this.bruteForce(i, j, backup);
     }
 
-    private boolean bruteForce(int i, int j, SudokuBoard backup) {
-        Integer[] guesses = this.options[i][j].toArray(new Integer[0]);
-//        this.printData();
+    protected boolean bruteForce(int i, int j, SudokuBoard backup) {
+        IntSet guesses = (IntSet) this.options[i][j].clone();
         for (int n: guesses) {
             this.setEntry(i, j, n);
             this.applyLogic();
-//            System.out.println(this);
 
             if (this.isFilled() && this.isSolution()) {
-//                System.out.println("found solution(1)");
                 return true;
             } else {
-                int[] space = this.findSpaceWithFewestPossibilities();
-                int imin = space[0];
-                int jmin = space[1];
-//                System.out.println(String.format("(%d, %d)", imin, jmin));
-
-                if (imin < 0) {
-//                    System.out.println("reverting(1)");
-                    this.copyFrom(backup);
-                } else if (this.bruteForce(imin, jmin, new SudokuBoard(this))) {
-//                    System.out.println("found solution(2)");
+                int[] entry = this.findMostAttractiveEntry();
+                assert(entry.length == 2);
+                if (entry[0] >= 0 && this.bruteForce(entry[0], entry[1], new SudokuBoard(this))) {
                     return true;
                 } else {
-//                    System.out.println("reverting(2)");
                     this.copyFrom(backup);
                 }
             }

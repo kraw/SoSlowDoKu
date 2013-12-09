@@ -1,8 +1,4 @@
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
+import Sudoku.ParallelSudokuSolver;
 import Sudoku.SudokuSolver;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,49 +6,53 @@ import org.junit.runners.JUnit4;
 
 import Sudoku.SudokuBoard;
 
+import java.util.Arrays;
+
+import static org.junit.Assert.*;
+
 @RunWith(JUnit4.class)
 public class SudokuTest {
-    static String validBoardString = "x9x7xx86x" +
-                                     "x31xx5x2x" +
-                                     "8x6xxxxxx" +
-                                     "xx7x5xxx6" +
-                                     "xxx3x7xxx" +
-                                     "5xxx1x7xx" +
-                                     "xxxxxx1x9" +
-                                     "x2x6xx35x" +
-                                     "x54xx8x7x";
+    static String validBoardString = ".9.7..86." +
+                                     ".31..5.2." +
+                                     "8.6......" +
+                                     "..7.5...6" +
+                                     "...3.7..." +
+                                     "5...1.7.." +
+                                     "......1.9" +
+                                     ".2.6..35." +
+                                     ".54..8.7.";
 
-    static String invalidRowString = "x9x7xx86x" +
-                                     "x311x5x2x" +  // two ones in this row
-                                     "8x6xxxxxx" +
-                                     "xx7x5xxx6" +
-                                     "xxx3x7xxx" +
-                                     "5xxx1x7xx" +
-                                     "xxxxxx1x9" +
-                                     "x2x6xx35x" +
-                                     "x54xx8x7x";
+    static String invalidRowString = ".9.7..86." +
+                                     ".311.5.2." +  // two ones in this row
+                                     "8.6......" +
+                                     "..7.5...6" +
+                                     "...3.7..." +
+                                     "5...1.7.." +
+                                     "......1.9" +
+                                     ".2.6..35." +
+                                     ".54..8.7.";
 
     // has two nines in last column
-    static String invalidColString = "x9x7xx86x" +
-                                     "x31xx5x29" +
-                                     "8x6xxxxxx" +
-                                     "xx7x5xxx6" +
-                                     "xxx3x7xxx" +
-                                     "5xxx1x7xx" +
-                                     "xxxxxx1x9" +
-                                     "x2x6xx35x" +
-                                     "x54xx8x7x";
+    static String invalidColString = ".9.7..86." +
+                                     ".31..5.29" +
+                                     "8.6......" +
+                                     "..7.5...6" +
+                                     "...3.7..." +
+                                     "5...1.7.." +
+                                     "......1.9" +
+                                     ".2.6..35." +
+                                     ".54..8.7.";
 
     // has two sevens in the bottom right submatrix
-    static String invalidSubmatrixString = "x9x7xx86x" +
-                                           "x31xx5x2x" +
-                                           "8x6xxxxxx" +
-                                           "xx7x5xxx6" +
-                                           "xxx3x7xxx" +
-                                           "5xxx1x7xx" +
-                                           "xxxxxx1x9" +
-                                           "x2x6xx357" +
-                                           "x54xx8x7x";
+    static String invalidSubmatrixString = ".9.7..86." +
+                                           ".31..5.2." +
+                                           "8.6......" +
+                                           "..7.5...6" +
+                                           "...3.7..." +
+                                           "5...1.7.." +
+                                           "......1.9" +
+                                           ".2.6..357" +
+                                           ".54..8.7.";
 
     static String solvedBoardString = "295743861" +
                                       "431865927" +
@@ -258,52 +258,11 @@ public class SudokuTest {
     }
 
     @Test
-    public void Solver_hardPuzzles_1() {
-        for (int i = 0; i < hardPuzzles.length / 4; ++i) {
-            try {
-                SudokuSolver solver = new SudokuSolver(hardPuzzles[i]);
-                assertTrue(solver.solve());
-            } catch (SudokuBoard.SudokuException e) {
-                fail("Failed " + hardPuzzles[i] + " : " + e.toString());
-            }
+    public void Solver_hardPuzzles() {
+        SudokuBoard[] output = ParallelSudokuSolver.run(hardPuzzles, 4);
+        for (int i = 0; i < output.length; ++i) {
+            assertNotNull(output[i]);
+            assertTrue(output[i].isSolution());
         }
     }
-
-    @Test
-    public void Solver_hardPuzzles_2() {
-        for (int i = hardPuzzles.length / 4; i < hardPuzzles.length / 2; ++i) {
-            try {
-                SudokuSolver solver = new SudokuSolver(hardPuzzles[i]);
-                assertTrue(solver.solve());
-            } catch (SudokuBoard.SudokuException e) {
-                fail("Failed " + hardPuzzles[i] + " : " + e.toString());
-            }
-        }
-    }
-
-    @Test
-    public void Solver_hardPuzzles_3() {
-        for (int i = hardPuzzles.length / 2; i < 3 * hardPuzzles.length / 4; ++i) {
-            try {
-                SudokuSolver solver = new SudokuSolver(hardPuzzles[i]);
-                assertTrue(solver.solve());
-            } catch (SudokuBoard.SudokuException e) {
-                fail("Failed " + hardPuzzles[i] + " : " + e.toString());
-            }
-        }
-    }
-
-    @Test
-    public void Solver_hardPuzzles_4() {
-        for (int i = 3 * hardPuzzles.length / 4; i < hardPuzzles.length; ++i) {
-            try {
-                SudokuSolver solver = new SudokuSolver(hardPuzzles[i]);
-                assertTrue(solver.solve());
-            } catch (SudokuBoard.SudokuException e) {
-                fail("Failed " + hardPuzzles[i] + " : " + e.toString());
-            }
-        }
-    }
-
-
 }
