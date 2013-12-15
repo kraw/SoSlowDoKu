@@ -166,13 +166,13 @@ public class SudokuSolver extends SudokuBoard {
         int iStart = ijCoords[0];
         int jStart = ijCoords[1];
 
-        for (int n: this.submatrixOptions[submatrix]) {
+        for (int n: this.submatrixOptions[submatrix].toArray()) {
             int ki = -1;
             int kj = -1;
 
             innerLoop: for (int i = iStart; i < iStart + 3; ++i) {
                 for (int j = jStart; j < jStart + 3; ++j) {
-                    if (this.entries[i][j] < 1 && this.options[i][j].contains((Integer) n)) {
+                    if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
                         if (ki >= 0) {
                             ki = kj = -1;
                             break innerLoop;
@@ -199,7 +199,7 @@ public class SudokuSolver extends SudokuBoard {
             // k represents the column where n must go.
             int k = -1;
             for (int j = 0; j < 9; ++j) {
-                if (this.entries[i][j] < 1 && this.options[i][j].contains((Integer) n)) {
+                if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
                     if (k >= 0) {   // n could go in two spaces, so we can't do anything
                         k = -1;
                         break;
@@ -218,10 +218,10 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     protected boolean tryToFillInCol(int j) {
-        for (int n: this.colOptions[j]) {
+        for (int n: this.colOptions[j].toArray()) {
             int k = -1;
             for (int i = 0; i < 9; ++i) {
-                if (this.entries[i][j] < 1 && this.options[i][j].contains((Integer) n)) {
+                if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
                     if (k >= 0) {   // n could go in two spaces, so we can't do anything
                         k = -1;
                         break;
