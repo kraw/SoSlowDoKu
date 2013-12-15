@@ -78,7 +78,8 @@ public class SudokuSolver extends SudokuBoard {
         for (int i = 0; i < this.options.length; ++i) {
             for (int j = 0; j < this.options[0].length; ++j) {
                 if (this.options[i][j] != null && this.options[i][j].size() == 1) {
-                    int n = this.options[i][j].iterator().next(); // grab the only thing in the set
+//                    int n = this.options[i][j].iterator().next(); // grab the only thing in the set
+                    int n = this.options[i][j].getFirst();
                     this.setEntry(i, j, n);
                     stateChanged = true;
                 }

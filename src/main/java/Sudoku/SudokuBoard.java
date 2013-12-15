@@ -132,7 +132,6 @@ public class SudokuBoard {
             return;
 
         this.entries[i][j] = n;
-//        this.options[i][j].clear();
         this.nEntriesFilled++;
 
         this.rowOptions[i].remove(n);
