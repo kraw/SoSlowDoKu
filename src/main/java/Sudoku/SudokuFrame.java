@@ -11,11 +11,8 @@ public class SudokuFrame extends JFrame implements ActionListener {
     private static Random random = new Random();
     private static final Color DARK_GREEN = new Color(0, 162, 0);
 
-    // the puzzle the user is trying to solve
     private SudokuBoard initialBoard;
-    // the current state of the board as the user progresses
     private SudokuBoard currentBoard;
-    // the solved board
     private SudokuSolver solution;
 
     private SudokuPanel sudokuPanel;
@@ -80,11 +77,12 @@ public class SudokuFrame extends JFrame implements ActionListener {
     }
 
     private int gradeEntries() {
-        this.currentBoard.copyFrom(this.sudokuPanel.getCurrentBoard());
+        this.currentBoard = this.sudokuPanel.getCurrentBoard();
         int countWrong = 0;
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
-                if (this.currentBoard.getEntry(i, j) != this.solution.getEntry(i, j) && this.currentBoard.getEntry(i, j) > 0) {
+                if (this.currentBoard.getEntry(i, j) != this.solution.getEntry(i, j)
+                        && this.currentBoard.getEntry(i, j) > 0) {
                     this.sudokuPanel.setFieldColor(i, j, Color.RED);
                     countWrong++;
                 } else {
@@ -96,7 +94,7 @@ public class SudokuFrame extends JFrame implements ActionListener {
     }
 
     private void showHint() {
-        this.currentBoard.copyFrom(this.sudokuPanel.getCurrentBoard());
+        this.currentBoard = this.sudokuPanel.getCurrentBoard();
         int nEntriesLeft = 81 - this.currentBoard.nEntriesFilled;
         if (nEntriesLeft < 2)
             return;
