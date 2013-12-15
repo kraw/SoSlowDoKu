@@ -283,49 +283,49 @@ public class SudokuBoard {
         return this.toString().replace("\n", "");
     }
 
-//    public void printData() {
-//        System.out.println("-----------");
-//        System.out.println("Filled squares: " + this.nEntriesFilled);
-//
-//        System.out.println("----Possibilities---");
-//        for (int i = 0; i < this.options.length; i++) {
-//            for (int j = 0; j < this.options[0].length; j++) {
-//                if (this.options[i][j].size() == 0) {
-//                    System.out.print("X");
-//                } else {
-//                    for (int n: this.options[i][j]) {
-//                        System.out.print(n);
-//                    }
-//                }
-//                System.out.print(" ");
-//            }
-//            System.out.println();
-//        }
-//
-//        System.out.println("-----Submatrix Options-----");
-//        for(int k = 0; k < this.submatrixOptions.length; k++){
-//            System.out.print("Box " + k + ": ");
-//            for (int n: this.submatrixOptions[k])
-//                System.out.print(n);
-//            System.out.println();
-//        }
-//
-//        System.out.println("-----Row Options-----");
-//        for(int i = 0; i < this.rowOptions.length; i++){
-//            System.out.print("Row " + i + ": ");
-//            for (int n: this.rowOptions[i])
-//                System.out.print(n);
-//            System.out.println();
-//
-//        }
-//
-//        System.out.println("-----Columns Options-----");
-//        for(int j = 0; j < this.colOptions.length; j++){
-//            System.out.print("Col " + j + ": ");
-//            for (int n: this.colOptions[j])
-//                System.out.print(n);
-//            System.out.println();
-//        }
-//    }
+    public void printData() {
+        System.out.println("-----------");
+        System.out.println("Filled squares: " + this.nEntriesFilled);
+
+        System.out.println("----Possibilities---");
+        for (int i = 0; i < this.options.length; i++) {
+            for (int j = 0; j < this.options[0].length; j++) {
+                if (this.options[i][j].size() == 0) {
+                    System.out.print("X");
+                } else {
+                    for (int n: this.options[i][j].toArray()) {
+                        System.out.print(n);
+                    }
+                }
+                System.out.print(" ");
+            }
+            System.out.println();
+        }
+
+        System.out.println("-----Submatrix Options-----");
+        for(int k = 0; k < this.submatrixOptions.length; k++){
+            System.out.print("Box " + k + ": ");
+            for (int n: this.submatrixOptions[k].toArray())
+                System.out.print(n);
+            System.out.println();
+        }
+
+        System.out.println("-----Row Options-----");
+        for(int i = 0; i < this.rowOptions.length; i++){
+            System.out.print("Row " + i + ": ");
+            for (int n: this.rowOptions[i].toArray())
+                System.out.print(n);
+            System.out.println();
+
+        }
+
+        System.out.println("-----Columns Options-----");
+        for(int j = 0; j < this.colOptions.length; j++){
+            System.out.print("Col " + j + ": ");
+            for (int n: this.colOptions[j].toArray())
+                System.out.print(n);
+            System.out.println();
+        }
+    }
 
 }
