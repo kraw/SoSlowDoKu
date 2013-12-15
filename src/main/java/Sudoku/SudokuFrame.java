@@ -98,11 +98,11 @@ public class SudokuFrame extends JFrame implements ActionListener {
         int nEntriesLeft = 81 - this.currentBoard.nEntriesFilled;
         if (nEntriesLeft < 2)
             return;
-        int choice = random.nextInt(nEntriesLeft);
-        int count = -1;
+        int choice = 1 + random.nextInt(nEntriesLeft);
+        int count = 0;
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
-                if (this.currentBoard.getEntry(i, j) < 0) {
+                if (this.currentBoard.getEntry(i, j) < 1) {
                     count += 1;
                     if (count == choice) {
                         this.sudokuPanel.setField(i, j, this.solution.getEntry(i, j));

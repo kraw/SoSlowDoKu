@@ -118,8 +118,7 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     protected boolean bruteForce(int i, int j, SudokuBoard backup) {
-        IntSet guesses = (IntSet) this.options[i][j].clone();
-        for (int n: guesses) {
+        for (int n: this.options[i][j].toArray()) {
             this.setEntry(i, j, n);
             this.applyLogic();
 
@@ -173,7 +172,7 @@ public class SudokuSolver extends SudokuBoard {
 
             innerLoop: for (int i = iStart; i < iStart + 3; ++i) {
                 for (int j = jStart; j < jStart + 3; ++j) {
-                    if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
+                    if (this.entries[i][j] < 1 && this.options[i][j].contains((Integer) n)) {
                         if (ki >= 0) {
                             ki = kj = -1;
                             break innerLoop;
@@ -195,12 +194,12 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     protected boolean tryToFillInRow(int i) {
-        for (int n: this.rowOptions[i].toArray(new Integer[0])) {
+        for (int n: this.rowOptions[i].toArray()) {
             // If only one space in the row has n as a possibility, then n must go in that space.
             // k represents the column where n must go.
             int k = -1;
             for (int j = 0; j < 9; ++j) {
-                if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
+                if (this.entries[i][j] < 1 && this.options[i][j].contains((Integer) n)) {
                     if (k >= 0) {   // n could go in two spaces, so we can't do anything
                         k = -1;
                         break;
@@ -222,7 +221,7 @@ public class SudokuSolver extends SudokuBoard {
         for (int n: this.colOptions[j]) {
             int k = -1;
             for (int i = 0; i < 9; ++i) {
-                if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
+                if (this.entries[i][j] < 1 && this.options[i][j].contains((Integer) n)) {
                     if (k >= 0) {   // n could go in two spaces, so we can't do anything
                         k = -1;
                         break;

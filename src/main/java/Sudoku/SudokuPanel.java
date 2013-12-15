@@ -58,7 +58,7 @@ public class SudokuPanel extends JPanel implements PropertyChangeListener {
         } catch (NumberFormatException e) {
             ;
         }
-        return -1;
+        return SudokuBoard.EMPTY_ENTRY;
     }
 
     private void initLayout() {
