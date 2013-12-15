@@ -7,19 +7,27 @@ import java.io.InputStreamReader;
 
 public class SudokuSolver extends SudokuBoard {
 
+    public static void printResult(String input, String result, boolean isSolved) {
+        System.out.println("Solving:");
+        System.out.println(input);
+        if (isSolved) {
+            System.out.println("Solved:");
+            System.out.println(result);
+        } else {
+            System.out.println("No solution");
+        }
+    }
+
     public static void main(String[] args) throws IOException {
-        System.out.println("Reading from stdin");
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         while (in.ready()) {
             String s = in.readLine();
             try {
                 SudokuSolver board = new SudokuSolver(s);
-                System.out.println("Solving:\n" + board);
-                if (board.solve()) {
-                    System.out.println("Solved:\n" + board);
-                } else {
-                    System.out.println("No solution");
-                }
+                String input = board.toString();
+                boolean solved = board.solve();
+                String output = board.toString();
+                printResult(input, output, solved);
             } catch (SudokuException e) {
                 System.out.println("Error: " + e.getMessage());
             }
@@ -35,8 +43,9 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     public boolean solve() {
-        if (this.isSolution())
+        if (this.isSolution()) {
             return true;
+        }
         this.applyLogic();
         this.bruteForce();
         return this.isValid() && this.isSolution();
@@ -46,22 +55,16 @@ public class SudokuSolver extends SudokuBoard {
         boolean stateChanged;
         do {
             stateChanged = false;
-//            System.out.println("\n" + this);
             while (this.reduceOptions()) {
-//                System.out.println("\nCLEANUP\n" + this);
-//                this.printData();
                 stateChanged = true;
             }
             while (this.tryToFinishRows()) {
-//                System.out.println("\nROWS\n" + this);
                 stateChanged = true;
             }
             while (this.tryToFinishCols()) {
-//                System.out.println("\nCOLS\n" + this);
                 stateChanged = true;
             }
             while (this.tryToFinishSubmatrices()) {
-//                System.out.println("\nSUBMATRIX\n" + this);
                 stateChanged = true;
             }
         } while (stateChanged);
@@ -108,12 +111,10 @@ public class SudokuSolver extends SudokuBoard {
         if (this.isFilled())
             return;
 
-        int[] space = this.findMostAttractiveEntry();
-        int i = space[0];
-        int j = space[1];
+        int[] entry = this.findMostAttractiveEntry();
 
         SudokuBoard backup = new SudokuBoard(this);
-        this.bruteForce(i, j, backup);
+        this.bruteForce(entry[0], entry[1], backup);
     }
 
     protected boolean bruteForce(int i, int j, SudokuBoard backup) {
@@ -136,7 +137,6 @@ public class SudokuSolver extends SudokuBoard {
         }
         return false;
     }
-
 
     public boolean tryToFinishSubmatrices() {
         boolean stateChanged = false;
@@ -163,18 +163,16 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     protected boolean tryToFillInSubmatrix(int submatrix) {
-        int iStart = (submatrix / 3) * 3;
-        int jStart = (submatrix % 3) * 3;
-        int iEnd = iStart + 3;
-        int jEnd = jStart + 3;
-        boolean stateChanged = false;
+        int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
+        int iStart = ijCoords[0];
+        int jStart = ijCoords[1];
 
         for (int n: this.submatrixOptions[submatrix]) {
             int ki = -1;
             int kj = -1;
 
-            innerLoop: for (int i = iStart; i < iEnd; ++i) {
-                for (int j = jStart; j < jEnd; ++j) {
+            innerLoop: for (int i = iStart; i < iStart + 3; ++i) {
+                for (int j = jStart; j < jStart + 3; ++j) {
                     if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
                         if (ki >= 0) {
                             ki = kj = -1;
@@ -193,20 +191,19 @@ public class SudokuSolver extends SudokuBoard {
             }
         }
 
-        return stateChanged;
+        return false;
     }
 
     protected boolean tryToFillInRow(int i) {
-        boolean stateChanged = false;
         for (int n: this.rowOptions[i].toArray(new Integer[0])) {
             // If only one space in the row has n as a possibility, then n must go in that space.
             // k represents the column where n must go.
             int k = -1;
-            innerLoop : for (int j = 0; j < 9; ++j) {
+            for (int j = 0; j < 9; ++j) {
                 if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
                     if (k >= 0) {   // n could go in two spaces, so we can't do anything
                         k = -1;
-                        break innerLoop;
+                        break;
                     } else {  // we've never seen n before, so store its location
                         k = j;
                     }
@@ -218,18 +215,17 @@ public class SudokuSolver extends SudokuBoard {
                 return true;
             }
         }
-        return stateChanged;
+        return false;
     }
 
     protected boolean tryToFillInCol(int j) {
-        boolean stateChanged = false;
         for (int n: this.colOptions[j]) {
             int k = -1;
-            innerLoop : for (int i = 0; i < 9; ++i) {
+            for (int i = 0; i < 9; ++i) {
                 if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
                     if (k >= 0) {   // n could go in two spaces, so we can't do anything
                         k = -1;
-                        break innerLoop;
+                        break;
                     } else {  // we've never seen n before, so store its location
                         k = i;
                     }
@@ -242,7 +238,7 @@ public class SudokuSolver extends SudokuBoard {
             }
         }
 
-        return stateChanged;
+        return false;
     }
 
 }

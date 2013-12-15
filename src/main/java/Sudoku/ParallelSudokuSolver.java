@@ -76,38 +76,46 @@ public class ParallelSudokuSolver {
     }
 
     public static void main(String args[]) throws IOException {
-        System.out.println("Reading from stdin");
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        boolean useParallel = true;
+        int numThreads = 4;
+        for (int i = 0; i < args.length; ++i) {
+            String arg = args[i];
+            if (arg.equals("-s" ) || arg.equals("--standard")) {
+                useParallel = false;
+            } else if (arg.equals("-n") || arg.equals("--numThreads")) {
+                numThreads = Integer.parseInt(args[++i]);
+            }
+        }
 
+        if (!useParallel) {
+            System.out.println("Running standard...");
+            SudokuSolver.main(args);
+            return;
+        }
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         ArrayList<String> inputs = new ArrayList<String>();
         while (in.ready()) {
             String s = in.readLine();
             inputs.add(s);
         }
 
-        SudokuBoard[] output = run(inputs.toArray(new String[0]), 4);
+        System.out.println("Running parallel...");
+        SudokuBoard[] output = run(inputs.toArray(new String[0]), numThreads);
         assert(inputs.size() == output.length);
         for (int i = 0; i < output.length; ++i) {
             try {
-                System.out.println("INPUT: `" + inputs.get(i) + "`");
-                System.out.println(new SudokuBoard(inputs.get(i)));
-                System.out.println("OUTPUT:");
-                if (output[i] == null)
-                    System.out.println("No solution found");
-                else
-                    System.out.println(output[i]);
+                String input = new SudokuBoard(inputs.get(i)).toString();
+                boolean isSolved = output[i] != null;
+                if (isSolved) {
+                    SudokuSolver.printResult(input, output[i].toString(), true);
+                } else {
+                    SudokuSolver.printResult(input, "", false);
+                }
             } catch (SudokuBoard.SudokuException e) {
                 System.out.println(e.getMessage());
             }
         }
 
-
-
-//        System.out.println("Solving:\n" + board);
-//        if (board.solve()) {
-//            System.out.println("Solved:\n" + board);
-//        } else {
-//            System.out.println("No solution");
-//        }
     }
 }

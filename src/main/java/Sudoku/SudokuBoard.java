@@ -80,7 +80,7 @@ public class SudokuBoard {
         this.updateComponentOptions();
     }
 
-    public SudokuBoard(int[][] array) throws SudokuException {
+    public SudokuBoard(int[][] array) {
         this.init();
 
         for (int i = 0; i < 9; ++i) {
@@ -96,8 +96,6 @@ public class SudokuBoard {
             }
         }
 
-        if (!this.isValid())
-            throw new SudokuException("Invalid board state");
         this.updateOptions();
         this.updateComponentOptions();
     }
@@ -119,8 +117,6 @@ public class SudokuBoard {
             }
         }
 
-        if (!this.isValid())
-            throw new SudokuException("Invalid board state");
         this.updateOptions();
         this.updateComponentOptions();
     }
@@ -151,9 +147,9 @@ public class SudokuBoard {
         return this.entries[i][j];
     }
 
-    /** Set the entry at (i, j) to n and update other data accordingly **/
+    /** Set the entry at (i, j) to n only if the value has not been set **/
     public void setEntry(int i, int j, int n) {
-        if (this.entries[i][j] == n)
+        if (this.entries[i][j] > 0)
             return;
 
         this.entries[i][j] = n;
@@ -162,7 +158,7 @@ public class SudokuBoard {
 
         this.rowOptions[i].remove(n);
         this.colOptions[j].remove(n);
-        this.submatrixOptions[this.getSubmatrixIndex(i, j)].remove(n);
+        this.submatrixOptions[toSubmatrixIndex(i, j)].remove(n);
 
         this.updateOptions();
     }
@@ -178,7 +174,7 @@ public class SudokuBoard {
                     for (int n = 1; n <= 9; ++n) {
                         if (this.countInCol(j, n) == 0
                                 && this.countInRow(i, n) == 0
-                                && this.countInSubmatrix(this.getSubmatrixIndex(i, j), n) == 0) {
+                                && this.countInSubmatrix(toSubmatrixIndex(i, j), n) == 0) {
                             this.options[i][j].add(n);
                         }
                     }
@@ -246,8 +242,14 @@ public class SudokuBoard {
         return count;
     }
 
-    protected int getSubmatrixIndex(int i, int j) {
+    public static int toSubmatrixIndex(int i, int j) {
         return (i / 3) * 3 + (j / 3);
+    }
+
+    public static int[] fromSubmatrixIndex(int k) {
+        if (k < 0 || k > 8)
+            return null;
+        return new int[]{3 * (k / 3), 3 * (k % 3)};
     }
 
     /** Return false if a number is in any row, column, or submatrix more than once. **/
