@@ -52,22 +52,10 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     public void applyLogic() {
-        boolean stateChanged;
-        do {
-            stateChanged = false;
-            while (this.reduceOptions()) {
-                stateChanged = true;
-            }
-            while (this.tryToFinishRows()) {
-                stateChanged = true;
-            }
-            while (this.tryToFinishCols()) {
-                stateChanged = true;
-            }
-            while (this.tryToFinishSubmatrices()) {
-                stateChanged = true;
-            }
-        } while (stateChanged);
+        while(this.reduceOptions()
+                || this.tryToFinishRows()
+                || this.tryToFinishCols()
+                || this.tryToFinishSubmatrices());
     }
 
     /* If any space has only one possible number remaining, place the number in its space.
@@ -78,7 +66,6 @@ public class SudokuSolver extends SudokuBoard {
         for (int i = 0; i < this.options.length; ++i) {
             for (int j = 0; j < this.options[0].length; ++j) {
                 if (this.options[i][j] != null && this.options[i][j].size() == 1) {
-//                    int n = this.options[i][j].iterator().next(); // grab the only thing in the set
                     this.setEntry(i, j, this.options[i][j].getFirst());
                     stateChanged = true;
                 }
@@ -160,6 +147,7 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     protected boolean tryToFillInSubmatrix(int submatrix) {
+        boolean stateChanged = false;
         final int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
 
         for (int n: this.submatrixOptions[submatrix].toArray()) {
@@ -182,21 +170,24 @@ public class SudokuSolver extends SudokuBoard {
 
             if (ki >= 0) {
                 this.setEntry(ki, kj, n);
-                return true;
+                stateChanged = true;
             }
         }
 
-        return false;
+        return stateChanged;
     }
 
+    /*
+     * For each number n in the row i, if only one space in the row has
+     * n as an option then n must go in that space.
+     */
     protected boolean tryToFillInRow(int i) {
+        boolean stateChanged = false;
         for (int n: this.rowOptions[i].toArray()) {
-            // If only one space in the row has n as a possibility, then n must go in that space.
-            // k represents the column where n must go.
-            int k = -1;
+            int k = -1;  // the index in the row where we see n
             for (int j = 0; j < 9; ++j) {
                 if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
-                    if (k >= 0) {   // n could go in two spaces, so we can't do anything
+                    if (k >= 0) {  // if we've already seen n once, then we can't
                         k = -1;
                         break;
                     } else {  // we've never seen n before, so store its location
@@ -207,13 +198,14 @@ public class SudokuSolver extends SudokuBoard {
 
             if (k >= 0) {
                 this.setEntry(i, k, n);
-                return true;
+                stateChanged = true;
             }
         }
-        return false;
+        return stateChanged;
     }
 
     protected boolean tryToFillInCol(int j) {
+        boolean stateChanged = false;
         for (int n: this.colOptions[j].toArray()) {
             int k = -1;
             for (int i = 0; i < 9; ++i) {
@@ -229,11 +221,11 @@ public class SudokuSolver extends SudokuBoard {
 
             if (k >= 0) {
                 this.setEntry(k, j, n);
-                return true;
+                stateChanged = true;
             }
         }
 
-        return false;
+        return stateChanged;
     }
 
 }
