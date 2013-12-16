@@ -10,14 +10,11 @@ public class SudokuBoard {
         }
     }
 
-    /* Stores the 9x9 grid of numbers. -1 represents an empty entry.  */
-    protected int[][] entries;
-
-    /* Stores the number of entries filled */
-    protected int nEntriesFilled;
-
-    /* options[i][j] is the set of numbers that might fill entries[i][j] */
-    protected IntSet[][] options;
+    protected int[][] entries;      /* The 9x9 grid of numbers. */
+    protected int nEntriesFilled;   /* Stores the number of entries filled */
+    protected IntSet[][] options;   /* options[i][j] is the set of numbers that might fill entries[i][j] */
+    protected IntSet[] rowOptions;  /* rowOptions[i] gives the set of numbers that can be placed in row i */
+    protected IntSet[] colOptions;  /* colOptions[j] gives the set of numbers that can be placed in column j */
 
     /* A submatrix is one of the nine 3x3 grids on the board that must contain the numbers 1-9.
      * Submatrices are indexed as follows:
@@ -28,20 +25,11 @@ public class SudokuBoard {
      */
     protected IntSet[] submatrixOptions;
 
-    /* rowOptions[i] gives the set of remaining numbers that can be placed in row i */
-    protected IntSet[] rowOptions;
-
-    /* colOptions[j] gives the set of remaining numbers that can be placed in column j */
-    protected IntSet[] colOptions;
-
     protected void init() {
-        /* Java arrays are guaranteed to have elements initialized to the default value (zero for ints).  */
+        /* Java arrays are initialized to a default value -- zero for ints.  */
         this.entries = new int[9][9];
         this.nEntriesFilled = 0;
 
-        /* Java is a bit finicky about arrays of generic things.
-         * We need casts, as seen here: http://stackoverflow.com/a/217093
-         */
         this.options = new IntSet[9][9];
         this.submatrixOptions = new IntSet[9];
         this.colOptions = new IntSet[9];
@@ -101,11 +89,12 @@ public class SudokuBoard {
     }
 
     protected SudokuBoard(SudokuBoard other)  {
+        this.init();
         this.copyFrom(other);
     }
 
     public void copyFrom(SudokuBoard other) {
-        this.init();
+        this.nEntriesFilled = 0;
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
                 // anything not in the range [1, 9] is assumed to be a blank space
@@ -114,7 +103,7 @@ public class SudokuBoard {
                     this.entries[i][j] = n;
                     this.nEntriesFilled++;
                 } else {
-                    this.entries[i][j] = -1;
+                    this.entries[i][j] = EMPTY_ENTRY;
                 }
             }
         }
@@ -186,13 +175,10 @@ public class SudokuBoard {
 
     /** Count the number of occurrences of n in the given submatrix **/
     protected int countInSubmatrix(int submatrix, int n) {
-        int iStart = (submatrix / 3) * 3;   // row
-        int jStart = (submatrix % 3) * 3;   // column
-        int iEnd = iStart + 3;
-        int jEnd = jStart + 3;
+        final int[] ijCoords = fromSubmatrixIndex(submatrix);
         int count = 0;
-        for (int i = iStart; i < iEnd; ++i) {
-            for (int j = jStart; j < jEnd; ++j) {
+        for (int i = ijCoords[0]; i < ijCoords[0] + 3; ++i) {
+            for (int j = ijCoords[1]; j < ijCoords[1] + 3; ++j) {
                 if (this.entries[i][j] == n)
                     count++;
             }

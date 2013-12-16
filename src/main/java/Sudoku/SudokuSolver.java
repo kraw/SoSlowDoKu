@@ -111,10 +111,8 @@ public class SudokuSolver extends SudokuBoard {
     public void bruteForce() {
         if (this.isFilled())
             return;
-
-        int[] entry = this.findMostAttractiveEntry();
-
         SudokuBoard backup = new SudokuBoard(this);
+        int[] entry = this.findMostAttractiveEntry();
         this.bruteForce(entry[0], entry[1], backup);
     }
 
@@ -163,16 +161,14 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     protected boolean tryToFillInSubmatrix(int submatrix) {
-        int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
-        int iStart = ijCoords[0];
-        int jStart = ijCoords[1];
+        final int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
 
         for (int n: this.submatrixOptions[submatrix].toArray()) {
             int ki = -1;
             int kj = -1;
 
-            innerLoop: for (int i = iStart; i < iStart + 3; ++i) {
-                for (int j = jStart; j < jStart + 3; ++j) {
+            innerLoop: for (int i = ijCoords[0]; i < ijCoords[0] + 3; ++i) {
+                for (int j = ijCoords[1]; j < ijCoords[1] + 3; ++j) {
                     if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
                         if (ki >= 0) {
                             ki = kj = -1;
