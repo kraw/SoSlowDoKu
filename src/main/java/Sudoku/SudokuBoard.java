@@ -48,8 +48,8 @@ public class SudokuBoard {
     public SudokuBoard() {
         this.init();
         assert(this.isValid());
-        this.updateOptions();
         this.updateComponentOptions();
+        this.updateOptions();
     }
 
     public SudokuBoard(int[][] array) {
@@ -66,8 +66,8 @@ public class SudokuBoard {
             }
         }
 
-        this.updateOptions();
         this.updateComponentOptions();
+        this.updateOptions();
     }
 
     public SudokuBoard(String s) throws SudokuException {
@@ -84,8 +84,8 @@ public class SudokuBoard {
             }
         }
 
-        this.updateOptions();
         this.updateComponentOptions();
+        this.updateOptions();
     }
 
     protected SudokuBoard(SudokuBoard other)  {
@@ -107,8 +107,8 @@ public class SudokuBoard {
                 }
             }
         }
-        this.updateOptions();
         this.updateComponentOptions();
+        this.updateOptions();
     }
 
     public int getEntry(int i, int j) {
@@ -139,9 +139,9 @@ public class SudokuBoard {
                 // to see which numbers can be placed there
                 if (this.entries[i][j] < 1) {
                     for (int n = 1; n <= 9; ++n) {
-                        if (this.countInCol(j, n) == 0
-                                && this.countInRow(i, n) == 0
-                                && this.countInSubmatrix(toSubmatrixIndex(i, j), n) == 0) {
+                        if (this.colOptions[j].contains(n)
+                                && this.rowOptions[i].contains(n)
+                                && this.submatrixOptions[toSubmatrixIndex(i, j)].contains(n)) {
                             this.options[i][j].add(n);
                         }
                     }
@@ -152,16 +152,15 @@ public class SudokuBoard {
 
     /** Update the row, column, and submatrix options arrays **/
     protected void updateComponentOptions() {
-        for (int n = 1; n <= 9; ++n) {
-            for (int i = 0; i < 9; ++i) {
-                if (this.countInRow(i, n) == 0)
-                    this.rowOptions[i].add(n);
-            }
-            for (int j = 0; j < 9; ++j) {
-                if (this.countInCol(j, n) == 0)
-                    this.colOptions[j].add(n);
-            }
-            for (int k = 0; k < 9; ++k) {
+        for (int k = 0; k < 9; ++k) {
+            this.rowOptions[k].clear();
+            this.colOptions[k].clear();
+            this.submatrixOptions[k].clear();
+            for (int n = 1; n <= 9; ++n) {
+                if (this.countInCol(k, n) == 0)
+                    this.colOptions[k].add(n);
+                if (this.countInRow(k, n) == 0)
+                    this.rowOptions[k].add(n);
                 if (this.countInSubmatrix(k, n) == 0)
                     this.submatrixOptions[k].add(n);
             }
