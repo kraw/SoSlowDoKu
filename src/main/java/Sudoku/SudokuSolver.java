@@ -4,6 +4,8 @@ package Sudoku;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.LinkedList;
+import java.util.List;
 
 public class SudokuSolver extends SudokuBoard {
 
@@ -42,13 +44,31 @@ public class SudokuSolver extends SudokuBoard {
         super(board);
     }
 
+    /**
+     * Solve the puzzle. This instance will store the solution.
+     *
+     * @return true if a solution was found
+     */
     public boolean solve() {
-        if (this.isSolution()) {
-            return true;
+        LinkedList<SudokuSolver> frontier = new LinkedList<SudokuSolver>();
+        frontier.push(new SudokuSolver(this));
+        while (!frontier.isEmpty()) {
+            SudokuSolver sb = frontier.pop();
+            sb.applyLogic();
+            if (sb.isFilled() && sb.isSolution()) {
+                this.copyFrom(sb);
+                return true;
+            }
+            int[] guess = sb.findMostAttractiveEntry();
+            if (guess[0] >= 0) {
+                for (int n: sb.options[guess[0]][guess[1]].toArray()) {
+                    SudokuSolver g = new SudokuSolver(sb);
+                    g.setEntry(guess[0], guess[1], n);
+                    frontier.push(g);
+                }
+            }
         }
-        this.applyLogic();
-        this.bruteForce();
-        return this.isValid() && this.isSolution();
+        return false;
     }
 
     public void applyLogic() {
@@ -92,34 +112,6 @@ public class SudokuSolver extends SudokuBoard {
             }
         }
         return new int[]{imin, jmin};
-    }
-
-    public void bruteForce() {
-        if (this.isFilled())
-            return;
-        SudokuBoard backup = new SudokuBoard(this);
-        int[] entry = this.findMostAttractiveEntry();
-        this.bruteForce(entry[0], entry[1], backup);
-    }
-
-    protected boolean bruteForce(int i, int j, SudokuBoard backup) {
-        for (int n: this.options[i][j].toArray()) {
-            this.setEntry(i, j, n);
-            this.applyLogic();
-
-            if (this.isFilled() && this.isSolution()) {
-                return true;
-            } else {
-                int[] entry = this.findMostAttractiveEntry();
-                assert(entry.length == 2);
-                if (entry[0] >= 0 && this.bruteForce(entry[0], entry[1], new SudokuBoard(this))) {
-                    return true;
-                } else {
-                    this.copyFrom(backup);
-                }
-            }
-        }
-        return false;
     }
 
     public boolean tryToFinishSubmatrices() {
