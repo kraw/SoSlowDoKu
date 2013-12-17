@@ -45,7 +45,6 @@ public class SudokuSolver extends SudokuBoard {
 
     /**
      * Solve the puzzle. This instance will store the solution.
-     *
      * @return true if a solution was found
      */
     public boolean solve() {
@@ -140,31 +139,27 @@ public class SudokuSolver extends SudokuBoard {
     protected boolean tryToFillInSubmatrix(int submatrix) {
         boolean stateChanged = false;
         final int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
-
         for (int n: this.submatrixOptions[submatrix].toArray()) {
-            int ki = -1;
-            int kj = -1;
-
-            innerLoop: for (int i = ijCoords[0]; i < ijCoords[0] + 3; ++i) {
+            int ki = -1, kj = -1;   // the coordinates where we see n in the submatrix
+            innerLoop: // iterate over the submatrix
+            for (int i = ijCoords[0]; i < ijCoords[0] + 3; ++i) {
                 for (int j = ijCoords[1]; j < ijCoords[1] + 3; ++j) {
                     if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
-                        if (ki >= 0) {
-                            ki = kj = -1;
+                        if (ki >= 0) {          // if we've already seen n
+                            ki = kj = -1;       // then we can't determine where n goes
                             break innerLoop;
-                        } else {
+                        } else {                // otherwise, we've never seen n, so store its location
                             ki = i;
                             kj = j;
                         }
                     }
                 }
             }
-
             if (ki >= 0) {
                 this.setEntry(ki, kj, n);
                 stateChanged = true;
             }
         }
-
         return stateChanged;
     }
 
@@ -181,12 +176,11 @@ public class SudokuSolver extends SudokuBoard {
                     if (k >= 0) {   // if we've already seen n once in the row
                         k = -1;     // then we can't determine the space n goes in
                         break;
-                    } else {        // we've never seen n before, so store its location
+                    } else {        // otherwise, we've never seen n before, so store its location
                         k = j;
                     }
                 }
             }
-
             if (k >= 0) {
                 this.setEntry(i, k, n);
                 stateChanged = true;
@@ -195,6 +189,7 @@ public class SudokuSolver extends SudokuBoard {
         return stateChanged;
     }
 
+    /* similar to tryToFillInRow */
     protected boolean tryToFillInCol(int j) {
         boolean stateChanged = false;
         for (int n: this.colOptions[j].toArray()) {
@@ -209,13 +204,11 @@ public class SudokuSolver extends SudokuBoard {
                     }
                 }
             }
-
             if (k >= 0) {
                 this.setEntry(k, j, n);
                 stateChanged = true;
             }
         }
-
         return stateChanged;
     }
 
