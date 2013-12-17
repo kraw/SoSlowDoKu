@@ -1,10 +1,6 @@
 package Sudoku;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -14,13 +10,16 @@ import java.util.concurrent.*;
  */
 public class ParallelSudokuSolver {
 
+    /** A task that solves Sudoku puzzle **/
     public static class SudokuTask implements Callable<SudokuBoard[]> {
-        String boardString;
-        boolean findAll;
+        private String boardString;
+        private boolean findAll;
+
         public SudokuTask(String boardString, boolean findAll) {
             this.boardString = boardString;
             this.findAll = findAll;
         }
+
         public SudokuBoard[] call() {
             List<SudokuBoard> result = null;
             try {
@@ -55,13 +54,20 @@ public class ParallelSudokuSolver {
         }
     }
 
+    /**
+     * Solve all of the given puzzles using a pool of N threads to do the work.
+     * @param inputStrings The puzzles to solve
+     * @param nThreads The number of threads in the pool
+     * @param findAll If true, find all solutions to a given puzzle.
+     * @return A 2D array, where each inner array contains all solutions to one puzzle.
+     *         The inner arrays may be null to indicate failure or no solutions.
+     */
     public static SudokuBoard[][] run(String[] inputStrings, int nThreads, boolean findAll) {
         ExecutorService threadPool = Executors.newFixedThreadPool(nThreads);
-        CompletionService<SudokuBoard[]> pool =
-                new ExecutorCompletionService<SudokuBoard[]>(threadPool);
-        List<Future<SudokuBoard[]>> output =
-                new LinkedList<Future<SudokuBoard[]>>();
+        CompletionService<SudokuBoard[]> pool = new ExecutorCompletionService<SudokuBoard[]>(threadPool);
+        List<Future<SudokuBoard[]>> output = new LinkedList<Future<SudokuBoard[]>>();
 
+        // add jobs to the queue
         for (String s: inputStrings) {
             output.add(pool.submit(new SudokuTask(s, findAll)));
         }

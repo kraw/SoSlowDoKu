@@ -54,6 +54,10 @@ public class FrontEnd {
         System.out.println("is interpreted as a blank entry.");
     }
 
+    /*
+     * This delegates to other main methods (Perf.main, SudokuSolver.main, ParallelSudokuSolver.main).
+     * args is passed to these mains, which are then responsible for parsing the args themselves.
+     */
     public static void main(String args[]) throws IOException {
         boolean useParallel = true;
         boolean runBenchmark = false;

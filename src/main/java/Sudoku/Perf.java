@@ -13,7 +13,9 @@ public class Perf {
         List<String> puzzles = new LinkedList<String>();
         BufferedReader in = new BufferedReader(new InputStreamReader(is));
         while (in.ready()) {
-            puzzles.add(in.readLine());
+            String s = in.readLine().trim();
+            if (!s.isEmpty())
+                puzzles.add(s);
         }
         return puzzles.toArray(new String[0]);
     }
@@ -58,14 +60,15 @@ public class Perf {
             }
         }
 
+        // read in puzzles
         long start = System.nanoTime();
         System.out.println("Loading puzzles...");
         String[] puzzles = getPuzzles(System.in);
         double duration = (System.nanoTime() - start) / ONE_MIL;
         System.out.println("  Done (" + duration + " ms)");
 
+        // solve puzzles
         System.out.println("Solving " + puzzles.length + " puzzles");
-
         SudokuBoard[][] solutions = null;
         if (useParallel) {
             System.out.println("Running in parallel with " + numThreads + " threads...");
@@ -79,10 +82,10 @@ public class Perf {
             duration = (System.nanoTime() - start) / ONE_BIL;
         }
         double durationPerPuzzle = duration * 1000.0 / puzzles.length;
-
         System.out.println("Took " + duration + " seconds");
         System.out.println("  " + durationPerPuzzle + " ms per puzzle");
 
+        // verify results
         System.out.println("Verifying results");
         int[] counts = verify(solutions);
         int nWrong = counts[0];
