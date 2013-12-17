@@ -1,5 +1,7 @@
 package Sudoku;
 
+import java.util.Arrays;
+
 public class SudokuBoard {
 
     public static int EMPTY_ENTRY = 0;
@@ -54,7 +56,6 @@ public class SudokuBoard {
 
     public SudokuBoard(int[][] array) {
         this.init();
-
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
                 // anything not in the range [1, 9] is assumed to be a blank space
@@ -64,17 +65,14 @@ public class SudokuBoard {
                 }
             }
         }
-
         this.updateComponentOptions();
         this.updateOptions();
     }
 
     public SudokuBoard(String s) throws SudokuException {
         this.init();
-
         if (s.length() < 81)
             throw new SudokuException("Not enough characters in string to construct a board.");
-
         for (int i = 0; i < Math.min(81, s.length()); ++i) {
             int c = s.charAt(i);
             if ('1' <= c && c <= '9') {
@@ -82,7 +80,6 @@ public class SudokuBoard {
                 this.nEntriesFilled++;
             }
         }
-
         this.updateComponentOptions();
         this.updateOptions();
     }
@@ -228,7 +225,8 @@ public class SudokuBoard {
         return true;
     }
 
-    /** Return true if the current state of the board is a valid solution.
+    /**
+     * Return true if the current state of the board is a valid solution.
      * Specifically, this checks that there is exactly one occurrence of each
      * number in each row, in each column, and in each submatrix.
      */
@@ -261,7 +259,11 @@ public class SudokuBoard {
         return sb.toString();
     }
 
-    /** Same as toString(), but with no whitespace. Use for testing. **/
+    public boolean equals(SudokuBoard other) {
+        return Arrays.equals(this.entries, other.entries);
+    }
+
+    /** Same as toString(), but with no whitespace. **/
     public String rawString() {
         return this.toString().replace("\n", "");
     }
@@ -274,7 +276,7 @@ public class SudokuBoard {
         for (int i = 0; i < this.options.length; i++) {
             for (int j = 0; j < this.options[0].length; j++) {
                 if (this.options[i][j].size() == 0) {
-                    System.out.print("X");
+                    System.out.print('.');
                 } else {
                     for (int n: this.options[i][j].toArray()) {
                         System.out.print(n);

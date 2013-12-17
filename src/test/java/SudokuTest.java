@@ -5,6 +5,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import Sudoku.SudokuBoard;
+
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
@@ -120,6 +123,12 @@ public class SudokuTest {
             "12.3.....4.5...6...7.....2.6..1..3....453.........8..9...45.1.........8......2..7",
             "5..6......2.....4...1.2.3..9..8.......7.4.1.......9..6..4.7.2...3.....1......5..8"
     };
+
+    // found here: http://www.sudokudragon.com/unsolvable.htm
+    static String multipleA = ".8...9743.5...8.1..1.......8....5......8.4......3....6.......7..3.5...8.9724...5.";
+
+    // found here: http://norvig.com/sudoku.html
+    static String multipleB = ".....6....59.....82....8....45........3........6..3.54...325..6..................";
 
     @Test
     public void DefaultConstruction() {
@@ -256,10 +265,45 @@ public class SudokuTest {
 
     @Test
     public void Solver_hardPuzzles() {
-        SudokuBoard[] output = ParallelSudokuSolver.run(hardPuzzles, 4);
-        for (int i = 0; i < output.length; ++i) {
-            assertNotNull(output[i]);
-            assertTrue(output[i].isSolution());
+        SudokuBoard[][] outputs = ParallelSudokuSolver.run(hardPuzzles, 4, false);
+        for (SudokuBoard[] solns: outputs) {
+            assertNotNull(solns);
+            assertEquals(1, solns.length);
+            assertTrue(solns[0].isSolution());
+        }
+    }
+
+    @Test
+    public void Solver_solveAllA() {
+        try {
+            SudokuSolver solver = new SudokuSolver(multipleA);
+            assert(solver.isValid());
+            List<SudokuBoard> solns = solver.solveAll();
+            for (int i = 0; i < solns.size(); ++i) {
+                assertTrue(solns.get(i).isSolution());
+                for (int j = i + 1; j < solns.size(); ++j) {
+                    assertFalse(solns.get(i).equals(solns.get(j)));
+                }
+            }
+        } catch (SudokuBoard.SudokuException e) {
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void Solver_solveAllB() {
+        try {
+            SudokuSolver solver = new SudokuSolver(multipleB);
+            assert(solver.isValid());
+            List<SudokuBoard> solns = solver.solveAll();
+            for (int i = 0; i < solns.size(); ++i) {
+                assertTrue(solns.get(i).isSolution());
+                for (int j = i + 1; j < solns.size(); ++j) {
+                    assertFalse(solns.get(i).equals(solns.get(j)));
+                }
+            }
+        } catch (SudokuBoard.SudokuException e) {
+            fail(e.toString());
         }
     }
 }

@@ -18,27 +18,45 @@ public class Perf {
         return puzzles.toArray(new String[0]);
     }
 
-    public static int verify(SudokuBoard[] boards) {
-        int nWrong = 0;
-        for (SudokuBoard sb: boards)
-            if (sb == null || !sb.isSolution())
-                nWrong += 1;
-        return nWrong;
+    /**
+     * @param boards Each inner array of SudokuBoards represents all the solutions to a single puzzle.
+     *               Any inner array (e.g. SudokuBoard[i]) may be null, indicating we failed to solve
+     *               the puzzle (invalid input puzzle, badly-formatted input, bugs, etc).
+     * @return An int[]{nBadSolutions, nUnsolvable} where nUnsolvable is the number of puzzles
+     *         for which no solutions were found, and nBadSolutions indicates a "solution" was given
+     *         that is not actually a valid solution.
+     */
+    public static int[] verify(SudokuBoard[][] boards) {
+        int nBadSolutions = 0;
+        int nUnsolvable = 0;
+        for (SudokuBoard[] solns: boards) {
+            if (solns == null) {
+                nUnsolvable += 1;
+            } else {
+                for (SudokuBoard b: solns) {
+                    if (!b.isSolution())
+                        nBadSolutions += 1;
+                }
+            }
+        }
+        return new int[]{nBadSolutions, nUnsolvable};
     }
 
     public static void main(String args[]) throws IOException {
         boolean useParallel = true;
         int numThreads = 4;
+        boolean findAll = false;
         for (int i = 0; i < args.length; ++i) {
-            if (args[i].equals("-p") || args[i].equals("--parallel")) {
+            if (FrontEnd.contains(FrontEnd.PARALLEL_OPTS, args[i])) {
                 useParallel = true;
-            } else if (args[i].equals("-s") || args[i].equals("--standard")) {
+            } else if (FrontEnd.contains(FrontEnd.STANDARD_OPTS, args[i])) {
                 useParallel = false;
-            } else if (args[i].equals("-n") || args[i].equals("--nThreads")) {
+            } else if (FrontEnd.contains(FrontEnd.NTHREADS_OPTS, args[i])) {
                 numThreads = Integer.parseInt(args[++i]);
+            } else if (FrontEnd.contains(FrontEnd.ALL_OPTS, args[i])) {
+                findAll = true;
             }
         }
-
 
         long start = System.nanoTime();
         System.out.println("Loading puzzles...");
@@ -48,26 +66,32 @@ public class Perf {
 
         System.out.println("Solving " + puzzles.length + " puzzles");
 
-        start = System.nanoTime();
-        SudokuBoard[] solutions = null;
+        SudokuBoard[][] solutions = null;
         if (useParallel) {
             System.out.println("Running in parallel with " + numThreads + " threads...");
-            solutions = ParallelSudokuSolver.run(puzzles, numThreads);
+            start = System.nanoTime();
+            solutions = ParallelSudokuSolver.run(puzzles, numThreads, findAll);
+            duration = (System.nanoTime() - start) / ONE_BIL;
         } else {
             System.out.println("Running standard...");
-            solutions = SudokuSolver.run(puzzles);
+            start = System.nanoTime();
+            solutions = SudokuSolver.run(puzzles, findAll);
+            duration = (System.nanoTime() - start) / ONE_BIL;
         }
-        duration = (System.nanoTime() - start) / ONE_BIL;
         double durationPerPuzzle = duration * 1000.0 / puzzles.length;
 
         System.out.println("Took " + duration + " seconds");
         System.out.println("  " + durationPerPuzzle + " ms per puzzle");
 
         System.out.println("Verifying results");
-        int nWrong = verify(solutions);
-        if (nWrong > 0)
-            System.out.println("  Failed to solve " + nWrong + " puzzles");
-        else
+        int[] counts = verify(solutions);
+        int nWrong = counts[0];
+        int nUnsolvable = counts[1];
+        if (nWrong > 0 || nUnsolvable > 0) {
+            System.out.println("  Produced " + nWrong + " incorrect solutions");
+            System.out.println("  " + nUnsolvable + " inputs were unsolvable");
+        } else {
             System.out.println("  All good");
+        }
     }
 }

@@ -1,53 +1,13 @@
 package Sudoku;
 
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.LinkedList;
+import java.util.List;
 
 public class SudokuSolver extends SudokuBoard {
 
-    public static void printResult(String input, String result, boolean isSolved) {
-        System.out.println("Solving:");
-        System.out.println(input);
-        if (isSolved) {
-            System.out.println("Solved:");
-            System.out.println(result);
-        } else {
-            System.out.println("No solution");
-        }
-    }
-
-    public static SudokuBoard[] run(String[] puzzles) {
-        SudokuBoard[] solutions = new SudokuBoard[puzzles.length];
-        for (int i = 0; i < puzzles.length; ++i) {
-            try {
-                SudokuSolver board = new SudokuSolver(puzzles[i]);
-                board.solve();
-                solutions[i] = board;
-            } catch (SudokuException e) {
-                System.out.println("Error: " + e.getMessage());
-            }
-        }
-        return solutions;
-    }
-
-    public static void main(String[] args) throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        while (in.ready()) {
-            String s = in.readLine();
-            try {
-                SudokuSolver board = new SudokuSolver(s);
-                String input = board.toString();
-                boolean solved = board.solve();
-                String output = board.toString();
-                printResult(input, output, solved);
-            } catch (SudokuException e) {
-                System.out.println("Error: " + e.getMessage());
-            }
-        }
-    }
+    // solveAll() quits once it finds this many solutions
+    public static int MAX_SOLNS = 20;
 
     public SudokuSolver(String s) throws SudokuException {
         super(s);
@@ -70,19 +30,52 @@ public class SudokuSolver extends SudokuBoard {
             if (sb.isFilled() && sb.isSolution()) {
                 this.copyFrom(sb);
                 return true;
-            }
-            int[] guess = sb.findMostAttractiveGuess();
-            if (guess[0] >= 0) {
-                for (int n: sb.options[guess[0]][guess[1]].toArray()) {
-                    SudokuSolver g = new SudokuSolver(sb);
-                    g.setEntry(guess[0], guess[1], n);
-                    frontier.push(g);
+            } else {
+                int[] guess = sb.findMostAttractiveGuess();
+                if (guess[0] >= 0) {
+                    for (int n: sb.options[guess[0]][guess[1]].toArray()) {
+                        SudokuSolver g = new SudokuSolver(sb);
+                        g.setEntry(guess[0], guess[1], n);
+                        frontier.push(g);
+                    }
                 }
             }
         }
         return false;
     }
 
+    /**
+     * Find all possible solutions, quitting once its found
+     * {@link Sudoku.SudokuSolver#MAX_SOLNS} solutions.
+     *
+     * @return A List containing all solutions found.
+     */
+    public List<SudokuBoard> solveAll() {
+        LinkedList<SudokuBoard> results = new LinkedList<SudokuBoard>();
+        LinkedList<SudokuSolver> frontier = new LinkedList<SudokuSolver>();
+        frontier.push(new SudokuSolver(this));
+        while (!frontier.isEmpty()) {
+            SudokuSolver sb = frontier.pop();
+            sb.applyLogic();
+            if (sb.isFilled() && sb.isSolution()) {
+                results.add(sb);
+                if (results.size() >= MAX_SOLNS)
+                    return results;
+            } else {
+                int[] guess = sb.findMostAttractiveGuess();
+                if (guess[0] >= 0) {
+                    for (int n: sb.options[guess[0]][guess[1]].toArray()) {
+                        SudokuSolver g = new SudokuSolver(sb);
+                        g.setEntry(guess[0], guess[1], n);
+                        frontier.push(g);
+                    }
+                }
+            }
+        }
+        return results;
+    }
+
+    /** Try to fill in values intelligently (as opposed to guessing) */
     public void applyLogic() {
         while(this.reduceOptions()
                 || this.tryToFinishRows()
@@ -90,7 +83,7 @@ public class SudokuSolver extends SudokuBoard {
                 || this.tryToFinishSubmatrices());
     }
 
-    /* If any space has only one possible number remaining, place the number in its space.
+    /* For any space only one possible number remaining, fill the space with that number.
      * Return true if the board changed.
      */
     protected boolean reduceOptions() {
@@ -150,33 +143,6 @@ public class SudokuSolver extends SudokuBoard {
         return stateChanged;
     }
 
-    protected boolean tryToFillInSubmatrix(int submatrix) {
-        boolean stateChanged = false;
-        final int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
-        for (int n: this.submatrixOptions[submatrix].toArray()) {
-            int ki = -1, kj = -1;   // the coordinates where we see n in the submatrix
-            innerLoop: // iterate over the submatrix
-            for (int i = ijCoords[0]; i < ijCoords[0] + 3; ++i) {
-                for (int j = ijCoords[1]; j < ijCoords[1] + 3; ++j) {
-                    if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
-                        if (ki >= 0) {          // if we've already seen n
-                            ki = kj = -1;       // then we can't determine where n goes
-                            break innerLoop;
-                        } else {                // otherwise, we've never seen n, so store its location
-                            ki = i;
-                            kj = j;
-                        }
-                    }
-                }
-            }
-            if (ki >= 0) {
-                this.setEntry(ki, kj, n);
-                stateChanged = true;
-            }
-        }
-        return stateChanged;
-    }
-
     /*
      * For each number n in the row i, if only one space in the row has
      * n as an option then n must go in that space.
@@ -186,7 +152,7 @@ public class SudokuSolver extends SudokuBoard {
         for (int n: this.rowOptions[i].toArray()) {
             int k = -1;  // the index in the row where we see n
             for (int j = 0; j < 9; ++j) {
-                if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
+                if (this.entries[i][j] <= EMPTY_ENTRY && this.options[i][j].contains(n)) {
                     if (k >= 0) {   // if we've already seen n once in the row
                         k = -1;     // then we can't determine the space n goes in
                         break;
@@ -209,7 +175,7 @@ public class SudokuSolver extends SudokuBoard {
         for (int n: this.colOptions[j].toArray()) {
             int k = -1;
             for (int i = 0; i < 9; ++i) {
-                if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
+                if (this.entries[i][j] <= EMPTY_ENTRY && this.options[i][j].contains(n)) {
                     if (k >= 0) {
                         k = -1;
                         break;
@@ -226,4 +192,73 @@ public class SudokuSolver extends SudokuBoard {
         return stateChanged;
     }
 
+    /* similar to try toFillInRow */
+    protected boolean tryToFillInSubmatrix(int submatrix) {
+        boolean stateChanged = false;
+        final int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
+        for (int n: this.submatrixOptions[submatrix].toArray()) {
+            int ki = -1, kj = -1;   // the coordinates where we see n in the submatrix
+
+            innerLoop: for (int i = ijCoords[0]; i < ijCoords[0] + 3; ++i) {
+                for (int j = ijCoords[1]; j < ijCoords[1] + 3; ++j) {
+                    if (this.entries[i][j] <= EMPTY_ENTRY && this.options[i][j].contains(n)) {
+                        if (ki >= 0) {          // if we've already seen n
+                            ki = kj = -1;       // then we can't determine where n goes
+                            break innerLoop;
+                        } else {                // otherwise, we've never seen n, so store its location
+                            ki = i;
+                            kj = j;
+                        }
+                    }
+                }
+            }
+            if (ki >= 0) {
+                this.setEntry(ki, kj, n);
+                stateChanged = true;
+            }
+        }
+        return stateChanged;
+    }
+
+    public static SudokuBoard[] solve(SudokuSolver solver, boolean findAll) {
+        if (findAll) {
+            List<SudokuBoard> solns = solver.solveAll();
+            if (solns.size() > 0) {
+                return solns.toArray(new SudokuBoard[0]);
+            }
+        } else if (solver.solve()) {
+            return new SudokuBoard[]{solver};
+        }
+        return null;
+    }
+
+    public static SudokuBoard[][] run(String[] puzzles, boolean findAll) {
+        SudokuBoard[][] solutions = new SudokuBoard[puzzles.length][];
+        for (int i = 0; i < puzzles.length; ++i) {
+            try {
+                solutions[i] = solve(new SudokuSolver(puzzles[i]), findAll);
+            } catch (SudokuException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+        return solutions;
+    }
+
+    public static void main(String[] args) throws IOException {
+        boolean findAll = false;
+        for (int i = 0; i < args.length; ++i) {
+            if (FrontEnd.contains(FrontEnd.ALL_OPTS, args[i])) {
+                findAll = true;
+            }
+        }
+        String[] inputs = Perf.getPuzzles(System.in);
+        SudokuBoard[][] outputs = run(inputs, findAll);
+        for (int i = 0; i < outputs.length; ++i) {
+            try {
+                ParallelSudokuSolver.printResult(new SudokuBoard(inputs[i]), outputs[i]);
+            } catch (SudokuException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
 }

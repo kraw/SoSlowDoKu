@@ -2,52 +2,83 @@ package Sudoku;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
 
+/**
+ * This class uses a thread pool to work on a stream of puzzles.
+ */
 public class ParallelSudokuSolver {
 
-    public static class SudokuTask implements Callable<SudokuBoard> {
+    public static class SudokuTask implements Callable<SudokuBoard[]> {
         String boardString;
-        public SudokuTask(String boardString) {
+        boolean findAll;
+        public SudokuTask(String boardString, boolean findAll) {
             this.boardString = boardString;
+            this.findAll = findAll;
         }
-        public SudokuBoard call() {
+        public SudokuBoard[] call() {
+            List<SudokuBoard> result = null;
             try {
                 SudokuSolver board = new SudokuSolver(this.boardString);
-                if (board.solve())
-                    return board;
+                if (findAll) {
+                    result = board.solveAll();
+                } else if (board.solve()) {
+                    result = new LinkedList<SudokuBoard>();
+                    result.add(board);
+                }
             } catch (SudokuBoard.SudokuException e) {
                 ;
+            }
+            if (result != null) {
+                return result.toArray(new SudokuBoard[0]);
             }
             return null;
         }
     }
 
-    public static SudokuBoard[] run(String[] inputStrings, int nThreads) {
+    public static void printResult(SudokuBoard input, SudokuBoard[] output) {
+        System.out.println("Solving:");
+        System.out.println(input);
+        if (output == null || output.length == 0) {
+            System.out.println("No solutions");
+        } else {
+            System.out.println("Found " + output.length + " solution(s):");
+            for (int i = 0; i < output.length; ++i) {
+                System.out.println((i + 1) + ".");
+                System.out.println(output[i]);
+            }
+        }
+    }
+
+    public static SudokuBoard[][] run(String[] inputStrings, int nThreads, boolean findAll) {
         ExecutorService threadPool = Executors.newFixedThreadPool(nThreads);
-        CompletionService<SudokuBoard> pool = new ExecutorCompletionService<SudokuBoard>(threadPool);
-        List<Future<SudokuBoard>> output = new LinkedList<Future<SudokuBoard>>();
+        CompletionService<SudokuBoard[]> pool =
+                new ExecutorCompletionService<SudokuBoard[]>(threadPool);
+        List<Future<SudokuBoard[]>> output =
+                new LinkedList<Future<SudokuBoard[]>>();
 
         for (String s: inputStrings) {
-            output.add(pool.submit(new SudokuTask(s)));
+            output.add(pool.submit(new SudokuTask(s, findAll)));
         }
 
-        SudokuBoard[] result = new SudokuBoard[output.size()];
+        // each input puzzle has an array of 1 or more solutions (or null if no solution)
+        SudokuBoard[][] result = new SudokuBoard[output.size()][];
         int i = 0;
-        for (Future<SudokuBoard> future: output) {
-            SudokuBoard sb = null;
+        for (Future<SudokuBoard[]> future: output) {
+            SudokuBoard[] solns = null;
             try {
-                sb = future.get();
+                solns = future.get();
             } catch (InterruptedException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                e.printStackTrace();
             } catch (ExecutionException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                e.printStackTrace();
             }
-            result[i++] = sb;
+            result[i++] = solns;
         }
 
         threadPool.shutdown();
@@ -56,31 +87,23 @@ public class ParallelSudokuSolver {
 
     public static void main(String args[]) throws IOException {
         int numThreads = 4;
+        boolean findAll = false;
         for (int i = 0; i < args.length; ++i) {
-            if (args[i].equals("-n") || args[i].equals("--nThreads")) {
+            if (FrontEnd.contains(FrontEnd.NTHREADS_OPTS, args[i])) {
                 numThreads = Integer.parseInt(args[++i]);
+            } else if (FrontEnd.contains(FrontEnd.ALL_OPTS, args[i])) {
+                findAll = true;
             }
         }
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        ArrayList<String> inputs = new ArrayList<String>();
-        while (in.ready()) {
-            String s = in.readLine();
-            inputs.add(s);
-        }
-
+        String[] inputs = Perf.getPuzzles(System.in);
         System.out.println("Using " + numThreads + " threads");
-        SudokuBoard[] output = run(inputs.toArray(new String[0]), numThreads);
-        assert(inputs.size() == output.length);
+        SudokuBoard[][] output = run(inputs, numThreads, findAll);
+        assert(inputs.length == output.length);
         for (int i = 0; i < output.length; ++i) {
             try {
-                String input = new SudokuBoard(inputs.get(i)).toString();
-                boolean isSolved = output[i] != null;
-                if (isSolved) {
-                    SudokuSolver.printResult(input, output[i].toString(), true);
-                } else {
-                    SudokuSolver.printResult(input, "", false);
-                }
+                SudokuBoard input = new SudokuBoard(inputs[i]);
+                printResult(input, output[i]);
             } catch (SudokuBoard.SudokuException e) {
                 System.out.println(e.getMessage());
             }
