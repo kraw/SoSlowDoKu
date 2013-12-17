@@ -244,7 +244,6 @@ public class SudokuBoard {
                     return false;
             }
         }
-
         return true;
     }
 

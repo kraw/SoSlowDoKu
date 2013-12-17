@@ -2,13 +2,17 @@ package Sudoku;
 
 /*
  * This class is specifically designed to store the numbers 1-9.
- * It has constant time add, remove, contains, and clear methods.
+ * It has constant-time add, remove, contains, and clear methods.
  */
 public class IntSet {
     /*
      * Each bit represents the presence of a number as follows:
-     *  bits = 0000 0000 0000 0000
-     *  n    =        9 8765 4321
+     *    bits = .... .... .... ....
+     *                  98 7654 321
+     * That is, the n-th bit is one if the set contains n.
+     * For example, to represent the set {1, 2, 6, 8, 9}:
+     *    bits = 0000 0011 0100 0110
+     *                  98 7654 321
      */
     private short bits;
     private short size;
