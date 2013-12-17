@@ -1,19 +1,8 @@
 package Sudoku;
 
-import java.util.HashSet;
-
 public class SudokuBoard {
 
-    /*
-     * Java doesn't like to create arrays of generic things.
-     * This gives an error:
-     *      new HashSet<Integer>[9][9];
-     * We can cast to reduce this to a warning:
-     *      (HashSet<Integer>[][]) new HashSet[9][9];
-     * IntSet just renames HashSet<Integer> to avoid the warning and cast:
-     *      IntSet[9][9];
-     */
-    protected static class IntSet extends HashSet<Integer> {}
+    public static int EMPTY_ENTRY = 0;
 
     public class SudokuException extends Exception {
         public SudokuException(String message) {
@@ -21,14 +10,11 @@ public class SudokuBoard {
         }
     }
 
-    /* Stores the 9x9 grid of numbers. -1 represents an empty entry.  */
-    protected int[][] entries;
-
-    /* Stores the number of entries filled */
-    protected int nEntriesFilled;
-
-    /* options[i][j] is the set of numbers that might fill entries[i][j] */
-    protected IntSet[][] options;
+    protected int[][] entries;      /* The 9x9 grid of numbers. */
+    protected int nEntriesFilled;   /* Stores the number of entries filled */
+    protected IntSet[][] options;   /* options[i][j] is the set of numbers that might fill entries[i][j] */
+    protected IntSet[] rowOptions;  /* rowOptions[i] gives the set of numbers that can be placed in row i */
+    protected IntSet[] colOptions;  /* colOptions[j] gives the set of numbers that can be placed in column j */
 
     /* A submatrix is one of the nine 3x3 grids on the board that must contain the numbers 1-9.
      * Submatrices are indexed as follows:
@@ -39,20 +25,11 @@ public class SudokuBoard {
      */
     protected IntSet[] submatrixOptions;
 
-    /* rowOptions[i] gives the set of remaining numbers that can be placed in row i */
-    protected IntSet[] rowOptions;
-
-    /* colOptions[j] gives the set of remaining numbers that can be placed in column j */
-    protected IntSet[] colOptions;
-
     protected void init() {
-        /* Java arrays are guaranteed to have elements initialized to the default value (zero for ints).  */
+        /* Java arrays are initialized to a default value -- zero for ints.  */
         this.entries = new int[9][9];
         this.nEntriesFilled = 0;
 
-        /* Java is a bit finicky about arrays of generic things.
-         * We need casts, as seen here: http://stackoverflow.com/a/217093
-         */
         this.options = new IntSet[9][9];
         this.submatrixOptions = new IntSet[9];
         this.colOptions = new IntSet[9];
@@ -70,14 +47,9 @@ public class SudokuBoard {
 
     public SudokuBoard() {
         this.init();
-        for (int i = 0; i < this.entries.length; ++i) {
-            for (int j = 0; j < this.entries[0].length; ++j) {
-                this.entries[i][j] = -1;
-            }
-        }
         assert(this.isValid());
-        this.updateOptions();
         this.updateComponentOptions();
+        this.updateOptions();
     }
 
     public SudokuBoard(int[][] array) {
@@ -86,18 +58,15 @@ public class SudokuBoard {
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
                 // anything not in the range [1, 9] is assumed to be a blank space
-                int n = (i >= array.length || j >= array[i].length) ? -1 : array[i][j];
-                if (1 <= n && n <= 9) {
-                    this.entries[i][j] = n;
+                if (1 <= array[i][j] && array[i][j] <= 9) {
+                    this.entries[i][j] = array[i][j];
                     this.nEntriesFilled++;
-                } else {
-                    this.entries[i][j] = -1;
                 }
             }
         }
 
-        this.updateOptions();
         this.updateComponentOptions();
+        this.updateOptions();
     }
 
     public SudokuBoard(String s) throws SudokuException {
@@ -109,24 +78,22 @@ public class SudokuBoard {
         for (int i = 0; i < Math.min(81, s.length()); ++i) {
             int c = s.charAt(i);
             if ('1' <= c && c <= '9') {
-                int n = Integer.parseInt("" + (char) c);
-                this.entries[i / 9][i % 9] = n;
+                this.entries[i / 9][i % 9] = c - '0';
                 this.nEntriesFilled++;
-            } else {
-                this.entries[i / 9][i % 9] = -1;
             }
         }
 
-        this.updateOptions();
         this.updateComponentOptions();
+        this.updateOptions();
     }
 
     protected SudokuBoard(SudokuBoard other)  {
+        this.init();
         this.copyFrom(other);
     }
 
     public void copyFrom(SudokuBoard other) {
-        this.init();
+        this.nEntriesFilled = 0;
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
                 // anything not in the range [1, 9] is assumed to be a blank space
@@ -135,12 +102,12 @@ public class SudokuBoard {
                     this.entries[i][j] = n;
                     this.nEntriesFilled++;
                 } else {
-                    this.entries[i][j] = -1;
+                    this.entries[i][j] = EMPTY_ENTRY;
                 }
             }
         }
-        this.updateOptions();
         this.updateComponentOptions();
+        this.updateOptions();
     }
 
     public int getEntry(int i, int j) {
@@ -153,7 +120,6 @@ public class SudokuBoard {
             return;
 
         this.entries[i][j] = n;
-        this.options[i][j].clear();
         this.nEntriesFilled++;
 
         this.rowOptions[i].remove(n);
@@ -170,11 +136,11 @@ public class SudokuBoard {
                 this.options[i][j].clear();
                 // If the space is unfilled, check the row, col, and submatrix
                 // to see which numbers can be placed there
-                if (this.entries[i][j] < 0) {
+                if (this.entries[i][j] < 1) {
                     for (int n = 1; n <= 9; ++n) {
-                        if (this.countInCol(j, n) == 0
-                                && this.countInRow(i, n) == 0
-                                && this.countInSubmatrix(toSubmatrixIndex(i, j), n) == 0) {
+                        if (this.colOptions[j].contains(n)
+                                && this.rowOptions[i].contains(n)
+                                && this.submatrixOptions[toSubmatrixIndex(i, j)].contains(n)) {
                             this.options[i][j].add(n);
                         }
                     }
@@ -185,16 +151,15 @@ public class SudokuBoard {
 
     /** Update the row, column, and submatrix options arrays **/
     protected void updateComponentOptions() {
-        for (int n = 1; n <= 9; ++n) {
-            for (int i = 0; i < 9; ++i) {
-                if (this.countInRow(i, n) == 0)
-                    this.rowOptions[i].add(n);
-            }
-            for (int j = 0; j < 9; ++j) {
-                if (this.countInCol(j, n) == 0)
-                    this.colOptions[j].add(n);
-            }
-            for (int k = 0; k < 9; ++k) {
+        for (int k = 0; k < 9; ++k) {
+            this.rowOptions[k].clear();
+            this.colOptions[k].clear();
+            this.submatrixOptions[k].clear();
+            for (int n = 1; n <= 9; ++n) {
+                if (this.countInCol(k, n) == 0)
+                    this.colOptions[k].add(n);
+                if (this.countInRow(k, n) == 0)
+                    this.rowOptions[k].add(n);
                 if (this.countInSubmatrix(k, n) == 0)
                     this.submatrixOptions[k].add(n);
             }
@@ -208,13 +173,10 @@ public class SudokuBoard {
 
     /** Count the number of occurrences of n in the given submatrix **/
     protected int countInSubmatrix(int submatrix, int n) {
-        int iStart = (submatrix / 3) * 3;   // row
-        int jStart = (submatrix % 3) * 3;   // column
-        int iEnd = iStart + 3;
-        int jEnd = jStart + 3;
+        final int[] ijCoords = fromSubmatrixIndex(submatrix);
         int count = 0;
-        for (int i = iStart; i < iEnd; ++i) {
-            for (int j = jStart; j < jEnd; ++j) {
+        for (int i = ijCoords[0]; i < ijCoords[0] + 3; ++i) {
+            for (int j = ijCoords[1]; j < ijCoords[1] + 3; ++j) {
                 if (this.entries[i][j] == n)
                     count++;
             }
@@ -247,8 +209,6 @@ public class SudokuBoard {
     }
 
     public static int[] fromSubmatrixIndex(int k) {
-        if (k < 0 || k > 8)
-            return null;
         return new int[]{3 * (k / 3), 3 * (k % 3)};
     }
 
@@ -290,7 +250,7 @@ public class SudokuBoard {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < this.entries.length; ++i) {
             for (int j = 0; j < this.entries[i].length; ++j) {
-                if (this.entries[i][j] < 0)
+                if (this.entries[i][j] < 1)
                     sb.append('.');
                 else
                     sb.append(this.entries[i][j]);
@@ -316,7 +276,7 @@ public class SudokuBoard {
                 if (this.options[i][j].size() == 0) {
                     System.out.print("X");
                 } else {
-                    for (int n: this.options[i][j]) {
+                    for (int n: this.options[i][j].toArray()) {
                         System.out.print(n);
                     }
                 }
@@ -328,7 +288,7 @@ public class SudokuBoard {
         System.out.println("-----Submatrix Options-----");
         for(int k = 0; k < this.submatrixOptions.length; k++){
             System.out.print("Box " + k + ": ");
-            for (int n: this.submatrixOptions[k])
+            for (int n: this.submatrixOptions[k].toArray())
                 System.out.print(n);
             System.out.println();
         }
@@ -336,7 +296,7 @@ public class SudokuBoard {
         System.out.println("-----Row Options-----");
         for(int i = 0; i < this.rowOptions.length; i++){
             System.out.print("Row " + i + ": ");
-            for (int n: this.rowOptions[i])
+            for (int n: this.rowOptions[i].toArray())
                 System.out.print(n);
             System.out.println();
 
@@ -345,7 +305,7 @@ public class SudokuBoard {
         System.out.println("-----Columns Options-----");
         for(int j = 0; j < this.colOptions.length; j++){
             System.out.print("Col " + j + ": ");
-            for (int n: this.colOptions[j])
+            for (int n: this.colOptions[j].toArray())
                 System.out.print(n);
             System.out.println();
         }

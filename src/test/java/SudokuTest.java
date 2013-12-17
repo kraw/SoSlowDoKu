@@ -5,9 +5,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import Sudoku.SudokuBoard;
-
-import java.util.Arrays;
-
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
@@ -140,22 +137,22 @@ public class SudokuTest {
     }
 
     @Test
-    public void ConstructFromString_invalidRow() {
+    public void invalidRow() {
         try {
             SudokuBoard board = new SudokuBoard(invalidRowString);
-            fail("No exception thrown");
-        } catch (SudokuBoard.SudokuException e) {
-            assertEquals(e.getMessage(), "Invalid board state");
+            assertTrue(!board.isValid());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown " + e.getMessage());
         }
     }
 
     @Test
-    public void ConstructFromString_invalidCol() {
+    public void invalidCol() {
         try {
             SudokuBoard board = new SudokuBoard(invalidColString);
-            fail("No exception thrown");
-        } catch (SudokuBoard.SudokuException e) {
-            assertEquals(e.getMessage(), "Invalid board state");
+            assertTrue(!board.isValid());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown " + e.getMessage());
         }
     }
 
@@ -163,9 +160,9 @@ public class SudokuTest {
     public void ConstructFromString_invalidSubmatrix() {
         try {
             SudokuBoard board = new SudokuBoard(invalidSubmatrixString);
-            fail("No exception thrown");
-        } catch (SudokuBoard.SudokuException e) {
-            assertEquals(e.getMessage(), "Invalid board state");
+            assertTrue(!board.isValid());
+        } catch (Exception e) {
+            fail("Unexpected exception thrown " + e.getMessage());
         }
     }
 

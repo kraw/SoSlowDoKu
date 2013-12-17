@@ -45,10 +45,10 @@ public class Perf {
 
         start = System.nanoTime();
         SudokuBoard[] solutions = ParallelSudokuSolver.run(puzzles, 4);
-        duration = (System.nanoTime() - start) / ONE_MIL;
-        double durationPerPuzzle = duration / puzzles.length;
+        duration = (System.nanoTime() - start) / ONE_BIL;
+        double durationPerPuzzle = duration * 1000.0 / puzzles.length;
 
-        System.out.println("Took " + duration + " ms");
+        System.out.println("Took " + duration + " seconds");
         System.out.println("  " + durationPerPuzzle + " ms per puzzle");
 
         System.out.println("Verifying results");

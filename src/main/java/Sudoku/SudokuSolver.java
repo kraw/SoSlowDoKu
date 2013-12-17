@@ -4,6 +4,7 @@ package Sudoku;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.LinkedList;
 
 public class SudokuSolver extends SudokuBoard {
 
@@ -42,32 +43,37 @@ public class SudokuSolver extends SudokuBoard {
         super(board);
     }
 
+    /**
+     * Solve the puzzle. This instance will store the solution.
+     * @return true if a solution was found
+     */
     public boolean solve() {
-        if (this.isSolution()) {
-            return true;
+        LinkedList<SudokuSolver> frontier = new LinkedList<SudokuSolver>();
+        frontier.push(new SudokuSolver(this));
+        while (!frontier.isEmpty()) {
+            SudokuSolver sb = frontier.pop();
+            sb.applyLogic();
+            if (sb.isFilled() && sb.isSolution()) {
+                this.copyFrom(sb);
+                return true;
+            }
+            int[] guess = sb.findMostAttractiveGuess();
+            if (guess[0] >= 0) {
+                for (int n: sb.options[guess[0]][guess[1]].toArray()) {
+                    SudokuSolver g = new SudokuSolver(sb);
+                    g.setEntry(guess[0], guess[1], n);
+                    frontier.push(g);
+                }
+            }
         }
-        this.applyLogic();
-        this.bruteForce();
-        return this.isValid() && this.isSolution();
+        return false;
     }
 
     public void applyLogic() {
-        boolean stateChanged;
-        do {
-            stateChanged = false;
-            while (this.reduceOptions()) {
-                stateChanged = true;
-            }
-            while (this.tryToFinishRows()) {
-                stateChanged = true;
-            }
-            while (this.tryToFinishCols()) {
-                stateChanged = true;
-            }
-            while (this.tryToFinishSubmatrices()) {
-                stateChanged = true;
-            }
-        } while (stateChanged);
+        while(this.reduceOptions()
+                || this.tryToFinishRows()
+                || this.tryToFinishCols()
+                || this.tryToFinishSubmatrices());
     }
 
     /* If any space has only one possible number remaining, place the number in its space.
@@ -78,8 +84,7 @@ public class SudokuSolver extends SudokuBoard {
         for (int i = 0; i < this.options.length; ++i) {
             for (int j = 0; j < this.options[0].length; ++j) {
                 if (this.options[i][j] != null && this.options[i][j].size() == 1) {
-                    int n = this.options[i][j].iterator().next(); // grab the only thing in the set
-                    this.setEntry(i, j, n);
+                    this.setEntry(i, j, this.options[i][j].getFirst());
                     stateChanged = true;
                 }
             }
@@ -90,7 +95,7 @@ public class SudokuSolver extends SudokuBoard {
     /* This method finds the next space where the solver will guess numbers.
      * Currently, this finds the entry with the fewest number of options left.
      */
-    protected int[] findMostAttractiveEntry() {
+    protected int[] findMostAttractiveGuess() {
         int min = 10;
         int imin = -1;
         int jmin = -1;
@@ -105,37 +110,6 @@ public class SudokuSolver extends SudokuBoard {
             }
         }
         return new int[]{imin, jmin};
-    }
-
-    public void bruteForce() {
-        if (this.isFilled())
-            return;
-
-        int[] entry = this.findMostAttractiveEntry();
-
-        SudokuBoard backup = new SudokuBoard(this);
-        this.bruteForce(entry[0], entry[1], backup);
-    }
-
-    protected boolean bruteForce(int i, int j, SudokuBoard backup) {
-        IntSet guesses = (IntSet) this.options[i][j].clone();
-        for (int n: guesses) {
-            this.setEntry(i, j, n);
-            this.applyLogic();
-
-            if (this.isFilled() && this.isSolution()) {
-                return true;
-            } else {
-                int[] entry = this.findMostAttractiveEntry();
-                assert(entry.length == 2);
-                if (entry[0] >= 0 && this.bruteForce(entry[0], entry[1], new SudokuBoard(this))) {
-                    return true;
-                } else {
-                    this.copyFrom(backup);
-                }
-            }
-        }
-        return false;
     }
 
     public boolean tryToFinishSubmatrices() {
@@ -163,82 +137,79 @@ public class SudokuSolver extends SudokuBoard {
     }
 
     protected boolean tryToFillInSubmatrix(int submatrix) {
-        int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
-        int iStart = ijCoords[0];
-        int jStart = ijCoords[1];
-
-        for (int n: this.submatrixOptions[submatrix]) {
-            int ki = -1;
-            int kj = -1;
-
-            innerLoop: for (int i = iStart; i < iStart + 3; ++i) {
-                for (int j = jStart; j < jStart + 3; ++j) {
-                    if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
-                        if (ki >= 0) {
-                            ki = kj = -1;
+        boolean stateChanged = false;
+        final int[] ijCoords = SudokuBoard.fromSubmatrixIndex(submatrix);
+        for (int n: this.submatrixOptions[submatrix].toArray()) {
+            int ki = -1, kj = -1;   // the coordinates where we see n in the submatrix
+            innerLoop: // iterate over the submatrix
+            for (int i = ijCoords[0]; i < ijCoords[0] + 3; ++i) {
+                for (int j = ijCoords[1]; j < ijCoords[1] + 3; ++j) {
+                    if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
+                        if (ki >= 0) {          // if we've already seen n
+                            ki = kj = -1;       // then we can't determine where n goes
                             break innerLoop;
-                        } else {
+                        } else {                // otherwise, we've never seen n, so store its location
                             ki = i;
                             kj = j;
                         }
                     }
                 }
             }
-
             if (ki >= 0) {
                 this.setEntry(ki, kj, n);
-                return true;
+                stateChanged = true;
             }
         }
-
-        return false;
+        return stateChanged;
     }
 
+    /*
+     * For each number n in the row i, if only one space in the row has
+     * n as an option then n must go in that space.
+     */
     protected boolean tryToFillInRow(int i) {
-        for (int n: this.rowOptions[i].toArray(new Integer[0])) {
-            // If only one space in the row has n as a possibility, then n must go in that space.
-            // k represents the column where n must go.
-            int k = -1;
+        boolean stateChanged = false;
+        for (int n: this.rowOptions[i].toArray()) {
+            int k = -1;  // the index in the row where we see n
             for (int j = 0; j < 9; ++j) {
-                if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
-                    if (k >= 0) {   // n could go in two spaces, so we can't do anything
-                        k = -1;
+                if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
+                    if (k >= 0) {   // if we've already seen n once in the row
+                        k = -1;     // then we can't determine the space n goes in
                         break;
-                    } else {  // we've never seen n before, so store its location
+                    } else {        // otherwise, we've never seen n before, so store its location
                         k = j;
                     }
                 }
             }
-
             if (k >= 0) {
                 this.setEntry(i, k, n);
-                return true;
+                stateChanged = true;
             }
         }
-        return false;
+        return stateChanged;
     }
 
+    /* similar to tryToFillInRow */
     protected boolean tryToFillInCol(int j) {
-        for (int n: this.colOptions[j]) {
+        boolean stateChanged = false;
+        for (int n: this.colOptions[j].toArray()) {
             int k = -1;
             for (int i = 0; i < 9; ++i) {
-                if (this.entries[i][j] < 0 && this.options[i][j].contains((Integer) n)) {
-                    if (k >= 0) {   // n could go in two spaces, so we can't do anything
+                if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
+                    if (k >= 0) {
                         k = -1;
                         break;
-                    } else {  // we've never seen n before, so store its location
+                    } else {
                         k = i;
                     }
                 }
             }
-
             if (k >= 0) {
                 this.setEntry(k, j, n);
-                return true;
+                stateChanged = true;
             }
         }
-
-        return false;
+        return stateChanged;
     }
 
 }
