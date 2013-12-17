@@ -5,7 +5,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
-import java.util.List;
 
 public class SudokuSolver extends SudokuBoard {
 
@@ -59,7 +58,7 @@ public class SudokuSolver extends SudokuBoard {
                 this.copyFrom(sb);
                 return true;
             }
-            int[] guess = sb.findMostAttractiveEntry();
+            int[] guess = sb.findMostAttractiveGuess();
             if (guess[0] >= 0) {
                 for (int n: sb.options[guess[0]][guess[1]].toArray()) {
                     SudokuSolver g = new SudokuSolver(sb);
@@ -97,7 +96,7 @@ public class SudokuSolver extends SudokuBoard {
     /* This method finds the next space where the solver will guess numbers.
      * Currently, this finds the entry with the fewest number of options left.
      */
-    protected int[] findMostAttractiveEntry() {
+    protected int[] findMostAttractiveGuess() {
         int min = 10;
         int imin = -1;
         int jmin = -1;
@@ -179,10 +178,10 @@ public class SudokuSolver extends SudokuBoard {
             int k = -1;  // the index in the row where we see n
             for (int j = 0; j < 9; ++j) {
                 if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
-                    if (k >= 0) {  // if we've already seen n once, then we can't
-                        k = -1;
+                    if (k >= 0) {   // if we've already seen n once in the row
+                        k = -1;     // then we can't determine the space n goes in
                         break;
-                    } else {  // we've never seen n before, so store its location
+                    } else {        // we've never seen n before, so store its location
                         k = j;
                     }
                 }
@@ -202,10 +201,10 @@ public class SudokuSolver extends SudokuBoard {
             int k = -1;
             for (int i = 0; i < 9; ++i) {
                 if (this.entries[i][j] < 1 && this.options[i][j].contains(n)) {
-                    if (k >= 0) {   // n could go in two spaces, so we can't do anything
+                    if (k >= 0) {
                         k = -1;
                         break;
-                    } else {  // we've never seen n before, so store its location
+                    } else {
                         k = i;
                     }
                 }
