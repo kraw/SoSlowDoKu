@@ -58,7 +58,6 @@ public class SudokuBoard {
         for (int i = 0; i < 9; ++i) {
             for (int j = 0; j < 9; ++j) {
                 // anything not in the range [1, 9] is assumed to be a blank space
-                int n = (i >= array.length || j >= array[i].length) ? -1 : array[i][j];
                 if (1 <= array[i][j] && array[i][j] <= 9) {
                     this.entries[i][j] = array[i][j];
                     this.nEntriesFilled++;
