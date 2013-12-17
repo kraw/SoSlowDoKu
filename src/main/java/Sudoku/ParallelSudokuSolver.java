@@ -10,27 +10,6 @@ import java.util.concurrent.*;
 
 public class ParallelSudokuSolver {
 
-    static class Pair<A, B> {
-        public A a;
-        public B b;
-        public Pair(A a, B b) {
-            this.a = a;
-            this.b = b;
-        }
-
-    }
-
-    static String[] hardPuzzles = {
-            "...4......5..8.2.6.....7...2...4....3......1...5.3.8.25...6.3.8..6....95..8......",
-            "1....6.8...71....66.....15..3.9.....7....184.....2........9.41.5....4..8...8..5..",
-            ".2....7..4....9.3.6..2.3.4.....1......89.....9....4.6..94....5.5.....6.3.....5...",
-            "1...5.7.9..7.......6.......2...........5.1..2....2.39.3.4.9...15...1...3...8...4.",
-            "..3......4...8..36..83..1...4..6..73...9...1......2.....4.7..686........7.....5..",
-            "...4......5...9...6...2..1.2...7.9.1..5....7......8.3...6....9.7...3.1......9.327",
-            "...4......5..8.2.6.....71..2...4....3......1...5.3.8.25...6.3.8..6....9...8......",
-            "1...5.7.9..71......6.......2...........5.1..2....2.39.3...9...15...1...3...8...4."
-    };
-
     public static class SudokuTask implements Callable<SudokuBoard> {
         String boardString;
         public SudokuTask(String boardString) {
@@ -76,21 +55,11 @@ public class ParallelSudokuSolver {
     }
 
     public static void main(String args[]) throws IOException {
-        boolean useParallel = true;
         int numThreads = 4;
         for (int i = 0; i < args.length; ++i) {
-            String arg = args[i];
-            if (arg.equals("-s" ) || arg.equals("--standard")) {
-                useParallel = false;
-            } else if (arg.equals("-n") || arg.equals("--numThreads")) {
+            if (args[i].equals("-n") || args[i].equals("--nThreads")) {
                 numThreads = Integer.parseInt(args[++i]);
             }
-        }
-
-        if (!useParallel) {
-            System.out.println("Running standard...");
-            SudokuSolver.main(args);
-            return;
         }
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -100,7 +69,7 @@ public class ParallelSudokuSolver {
             inputs.add(s);
         }
 
-        System.out.println("Running parallel...");
+        System.out.println("Using " + numThreads + " threads");
         SudokuBoard[] output = run(inputs.toArray(new String[0]), numThreads);
         assert(inputs.size() == output.length);
         for (int i = 0; i < output.length; ++i) {

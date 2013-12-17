@@ -19,6 +19,20 @@ public class SudokuSolver extends SudokuBoard {
         }
     }
 
+    public static SudokuBoard[] run(String[] puzzles) {
+        SudokuBoard[] solutions = new SudokuBoard[puzzles.length];
+        for (int i = 0; i < puzzles.length; ++i) {
+            try {
+                SudokuSolver board = new SudokuSolver(puzzles[i]);
+                board.solve();
+                solutions[i] = board;
+            } catch (SudokuException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+        return solutions;
+    }
+
     public static void main(String[] args) throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         while (in.ready()) {

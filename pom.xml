@@ -25,7 +25,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>Sudoku.ParallelSudokuSolver</mainClass>
+                            <mainClass>Sudoku.FrontEnd</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

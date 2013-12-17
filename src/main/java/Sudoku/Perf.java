@@ -1,9 +1,6 @@
 package Sudoku;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,9 +9,9 @@ public class Perf {
     public static double ONE_MIL = 1000000.0;
     public static double ONE_BIL = 1000000000.0;
 
-    public static String[] getPuzzles(String filename) throws IOException {
+    public static String[] getPuzzles(InputStream is) throws IOException {
         List<String> puzzles = new LinkedList<String>();
-        BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(filename)));
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
         while (in.ready()) {
             puzzles.add(in.readLine());
         }
@@ -30,21 +27,36 @@ public class Perf {
     }
 
     public static void main(String args[]) throws IOException {
-        if (args.length < 1) {
-            System.out.println("Need a file of Sudoku puzzles");
-            return;
+        boolean useParallel = true;
+        int numThreads = 4;
+        for (int i = 0; i < args.length; ++i) {
+            if (args[i].equals("-p") || args[i].equals("--parallel")) {
+                useParallel = true;
+            } else if (args[i].equals("-s") || args[i].equals("--standard")) {
+                useParallel = false;
+            } else if (args[i].equals("-n") || args[i].equals("--nThreads")) {
+                numThreads = Integer.parseInt(args[++i]);
+            }
         }
+
 
         long start = System.nanoTime();
         System.out.println("Loading puzzles...");
-        String[] puzzles = getPuzzles(args[0]);
+        String[] puzzles = getPuzzles(System.in);
         double duration = (System.nanoTime() - start) / ONE_MIL;
         System.out.println("  Done (" + duration + " ms)");
 
         System.out.println("Solving " + puzzles.length + " puzzles");
 
         start = System.nanoTime();
-        SudokuBoard[] solutions = ParallelSudokuSolver.run(puzzles, 4);
+        SudokuBoard[] solutions = null;
+        if (useParallel) {
+            System.out.println("Running in parallel with " + numThreads + " threads...");
+            solutions = ParallelSudokuSolver.run(puzzles, numThreads);
+        } else {
+            System.out.println("Running standard...");
+            solutions = SudokuSolver.run(puzzles);
+        }
         duration = (System.nanoTime() - start) / ONE_BIL;
         double durationPerPuzzle = duration * 1000.0 / puzzles.length;
 
