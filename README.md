@@ -1,7 +1,7 @@
 Overview
 ========
 
-This is another quick Sudoku solver written in Java. It can find a solution in roughly 10-30 milliseconds per puzzle on my machine. It can also find all solutions for a puzzle (if it has more than one).
+This is another quick Sudoku solver written in Java. It can find a solution in roughly 10-30 milliseconds per puzzle on my machine. It can also find all solutions for a puzzle (if the puzzle has more than one).
 
 ### Build with Maven ###
 
@@ -19,7 +19,7 @@ This is more awkward, but you can do the following:
 
     cd src/main/java
     javac Sudoku/*.java
-    java Sudoku.FrontEnd < ../../../puzzles.txt > output.txt
+    java Sudoku.FrontEnd < puzzles.txt > output.txt
 
 ## Execution ##
 
@@ -39,6 +39,13 @@ Examples:
   * `java -jar sudoku.jar --nThreads 2 < puzzles.txt` -- run with two threads
   * `java -jar sudoku.jar -s -a < puzzles.txt` -- single-threaded and  find all solutions
   * `java -jar sudoku.jar -b -a -n 5 < puzzles.txt` -- time how long it takes using 5 threads while finding all solutions 
+
+
+`puzzles.txt` is some file that has one puzzle per line, with 81 characters representing the initial clues for the puzzle. Any character not 1-9 are assumed to be blank:
+
+    ........8..3...4...9..2..6.....79.......612...6.5.2.7...8...5...1.....2.4.5.....3
+    ........2..8.1.9..5....3.4....1.93...6..3..8...37......4......53.1.7.8..2........
+    ..2...7...1.....6.5......18....37.......49.....41.23....3.2.9...8.....5.6.......2
 
 ## Implementation ##
 
